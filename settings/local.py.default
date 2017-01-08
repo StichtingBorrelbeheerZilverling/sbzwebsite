@@ -1,0 +1,35 @@
+# Example of local settings, imported by __init__.py
+
+# Debug aan voor lokaal
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+# Admins die exceptie-notificaties krijgen
+ADMINS = ()
+MANAGERS = ADMINS
+
+# Hostnames
+ALLOWED_HOSTS = []
+
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    }
+}
+
+# Jouw secret key
+# http://www.miniwebtool.com/django-secret-key-generator/
+SECRET_KEY = ''
+
+# Email settings
+EMAIL_HOST = 'localhost'
+EMAIL_SUBJECT_PREFIX = '[SBZ] '
+EMAIL_FROM = 'SBZ <sbz@localhost>'
+DEFAULT_FROM_EMAIL = EMAIL_FROM
+SERVER_EMAIL = EMAIL_FROM
