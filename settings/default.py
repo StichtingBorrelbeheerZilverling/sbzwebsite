@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'apps.general',
-    'apps.multiverse',
+    'apps.multivers',
 ]
 
 MIDDLEWARE_CLASSES = [

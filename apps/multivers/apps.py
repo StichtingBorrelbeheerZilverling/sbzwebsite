@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class MultiverseConfig(AppConfig):
-    name = 'apps.multiverse'
+    name = 'apps.multivers'
