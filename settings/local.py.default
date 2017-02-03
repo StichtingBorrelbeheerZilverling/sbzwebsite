@@ -33,3 +33,6 @@ EMAIL_SUBJECT_PREFIX = '[SBZ] '
 EMAIL_FROM = 'SBZ <sbz@localhost>'
 DEFAULT_FROM_EMAIL = EMAIL_FROM
 SERVER_EMAIL = EMAIL_FROM
+
+mv_client_id = ''
+mv_client_secret = ''

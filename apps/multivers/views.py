@@ -1,117 +1,173 @@
 import json
-import time
+import re
 from urllib.parse import unquote
 
-import requests
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.urls import reverse_lazy
+from django.views.generic import FormView
+from django.views.generic import UpdateView
+from django.views.generic.base import RedirectView, View
 
-import settings
-from apps.multivers.models import Settings
+from apps.multivers.defaults import make_orderline, make_order
+from apps.multivers.forms import FileForm
+from . import tools
+from .models import Settings, Costumer, Product, Location
 
-REDIRECT_URL = "http://www.sbz.utwente.nl/test.php"
-token_expires = 0
+DISCOUNT = 'discount'
+
+data_cache = {}
 
 
-@login_required(login_url='/admin/login/?next=/multivers/')
-def index(request):
-    if request.POST:
-        return HttpResponse('Not implemented')
-    result = _oauth(request)
-    if result:
-        return result
-    else:
-        if Settings.objects.filter(key='db').exists():
-            return HttpResponse('asdfasd')
+class Index(LoginRequiredMixin, View):
+    def get(self, request):
+        result = tools.oauth(request)
+        if result:
+            return result
         else:
-            return render(request, 'db.html', {'dbs': _get_administrations()})
+            if not Settings.objects.filter(key=DISCOUNT).exists():
+                new_setting = Settings()
+                new_setting.key = DISCOUNT
+                new_setting.save()
+                return redirect(new_setting)
+            if Settings.objects.filter(key=DISCOUNT, value__isnull=True).exists() or not re.match(r'\d+(\.\d+)?', Settings.objects.get(key=DISCOUNT).value):
+                return redirect(Settings.objects.get(key=DISCOUNT))
+            if Settings.objects.filter(key='db').exists():
+                if request.user in data_cache:
+                    cache = data_cache[request.user]
+                    for alexia_id, alexia_name in cache['products'].items():
+                        product = Product.objects.filter(alexia_id=alexia_id)
+                        if product.exists():
+                            first = product.first()
+                            if first.alexia_name != alexia_name:
+                                first.alexia_name = alexia_name
+                                first.save()
+                        else:
+                            new_product = Product()
+                            new_product.alexia_id = alexia_id
+                            new_product.alexia_name = alexia_name
+                            new_product.save()
+                            return redirect(new_product)
+
+                    location = set(l for x in [d['location'] for a in cache['drinks'].values() for d in a] for l in x)
+                    db_location = [x[0] for x in Location.objects.all().values_list('name')]
+                    for l in location:
+                        if l not in db_location:
+                            new_location = Location()
+                            new_location.name = l
+                            new_location.save()
+                            return redirect(new_location)
+
+                    costumers = Costumer.objects.filter(alexia_name__in=cache['drinks'].keys())
+                    if costumers.count() >= len(cache['drinks']):
+                        return render(request, 'multivers/index.html', {'discount': Settings.objects.get(key=DISCOUNT)})
+                    else:
+                        for x in cache['drinks'].keys():
+                            if not Costumer.objects.filter(alexia_name=x).exists():
+                                new_costumer = Costumer()
+                                new_costumer.alexia_name = x
+                                new_costumer.save()
+                                return redirect(new_costumer)
+                        raise Exception('State impossible')
+                else:
+                    return redirect(reverse('multivers:upload'))
+            else:
+                return render(request, 'multivers/db.html', {'dbs': tools.get_administrations()})
 
 
-def save_code(request, code=None):
-    if code:
-        _save_setting(key='auth_code', value=unquote(code))
-    elif 'code' in request.GET:
-        _save_setting(key='auth_code', value=unquote(request.GET['code']))
-    return redirect('/multivers/')
-
-
-def reset(request):
-    Settings.objects.all().delete()
-    return redirect('/multivers/')
-
-
-def _save_setting(key, value=None):
-    if key and value:
-        setting, ignore = Settings.objects.get_or_create(key=key)
-        setting.value = value
-        setting.save()
-
-
-def _oauth(request):
-    for x in ['mv_client_id', 'mv_client_secret']:
-        if not hasattr(settings, x) or not getattr(settings, x):
-            raise Exception('The variable "{}" is not set in the settings.'.format(x))
-
-    if Settings.objects.filter(key='access_token').exists() and Settings.objects.get(key='access_token').value:
-        if token_expires < time.time():
-            _get_access_token(token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value, grant_type='refresh_token')
-        return
-    else:
-        if Settings.objects.filter(key='auth_code').exists():
-            auth_code = Settings.objects.get(key='auth_code')
-            return _get_access_token(token=auth_code.value)
+class SendToMultivers(LoginRequiredMixin, View):
+    def get(self, request):
+        result = tools.oauth(request)
+        if result:
+            return result
         else:
-            return render(request, 'no_oauth.html', {
-                'mv_client_id': settings.mv_client_id,
-                'mv_redirect_url': REDIRECT_URL,
-                'mv_scope': "http://UNIT4.Multivers.API/Web/WebApi/*",
-            })
+            result = []
+            for costumer_name, drinks in data_cache[request.user]['drinks'].items():
+                order_lines = []
+                for drink in drinks:
+                    locations = Location.objects.filter(name__in=drink['location'])
+                    discount = locations.filter(no_discount=Location.ALWAYS_DISCOUNT).exists() or not locations.filter(no_discount=Location.NO_DISCOUNT).exists()
+
+                    order_lines.extend(
+                        make_orderline(product_id, amount, drink['drink_name'], drink['date'], discount)
+                        for product_id, amount in drink['products'].items()
+                    )
+                order = make_order(costumer_name, order_lines)
+                sr, response = tools.send_to_multivers(order)
+                if not sr:
+                    return HttpResponse('Error {} {}<br>\n<br>\n{}'.format(response.status_code, response.content, json.dumps(order)))
+                else:
+                    json_response = json.loads(response.content.decode('UTF-8'))
+                    result.append((costumer_name, json_response['orderId'], json_response['totalOrderAmount']))
+            return render(request, 'multivers/send.html', {'result': result})
 
 
-def _get_access_token(token_type='code', token=None, grant_type='authorization_code'):
-    global token_expires
-    response = requests.post(
-        url="https://api.online.unit4.nl/V19/OAuth/Token",
-        data='{}={}&client_id={}&client_secret={}&redirect_uri={}&grant_type={}'.format(
-            token_type,
-            token,
-            settings.mv_client_id,
-            settings.mv_client_secret,
-            REDIRECT_URL,
-            grant_type,
-        ),
-        headers={'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'UTF-8'},
-    )
+class SaveCode(LoginRequiredMixin, RedirectView):
+    def dispatch(self, request, *args, **kwargs):
+        if 'code' in kwargs:
+            tools.save_setting(key='auth_code', value=unquote(kwargs['code']))
+        elif 'code' in request.GET:
+            tools.save_setting(key='auth_code', value=unquote(request.GET['code']))
+        return super(SaveCode, self).dispatch(request, *args, **kwargs)
 
-    if response.status_code == 200:
-        content = json.loads(response.content.decode("utf-8", "strict"))
-
-        _save_setting('refresh_token', content['refresh_token'])
-        _save_setting('token_type', content['token_type'])
-        _save_setting('expires_in', content['expires_in'])
-        _save_setting('access_token', content['access_token'])
-        _save_setting('access_token_acquired', str(time.time()))
-        token_expires = time.time() + int(content['expires_in']) - 2
-        return redirect('/multivers/')
-    else:
-        Settings.objects.filter(key='auth_code').delete()
-        Settings.objects.filter(key='access_token').delete()
-        return HttpResponse('ERROROROROROR: ' + str(response.status_code) + ' ' + str(response.content) + '\n auth_token and access_token deleted')
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('multivers:index')
 
 
-def _get_administrations():
-    response = requests.get(url="https://api.online.unit4.nl/V19/api/AdministrationNVL",
-                            headers={
-                                'Accept': 'application/json',
-                                'Authorization': 'Bearer {}'.format(Settings.objects.get(key='access_token').value),
-                            })
-    if response.status_code == 200:
-        return json.loads(response.content.decode("utf-8", "strict"))
-    else:
-        raise Exception('Error connecting to the api: {}'.format(response.content))
+class SelectDB(LoginRequiredMixin, RedirectView):
+    def dispatch(self, request, *args, **kwargs):
+        tools.save_setting('db', kwargs['name'])
+        return super(SelectDB, self).dispatch(request, *args, **kwargs)
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('multivers:index')
 
 
-def select_db(request, name):
-    _save_setting('db', name)
-    return redirect('/multivers/')
+class ClearCache(LoginRequiredMixin, RedirectView):
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            del data_cache[request.user]
+        except NameError:
+            pass
+        except KeyError:
+            pass
+        return super(ClearCache, self).dispatch(request, *args, **kwargs)
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('multivers:index')
+
+
+class UploadJsonData(LoginRequiredMixin, FormView):
+    form_class = FileForm
+    template_name = 'multivers/file_upload.html'
+    success_url = reverse_lazy('multivers:index')
+
+    def form_valid(self, form):
+        data_cache[self.request.user] = form.cleaned_json
+        return super(UploadJsonData, self).form_valid(form)
+
+
+class CostumerUpdate(LoginRequiredMixin, UpdateView):
+    model = Costumer
+    success_url = reverse_lazy('multivers:index')
+    fields = '__all__'
+
+
+class ProductUpdate(LoginRequiredMixin, UpdateView):
+    model = Product
+    success_url = reverse_lazy('multivers:index')
+    fields = '__all__'
+
+
+class LocationUpdate(LoginRequiredMixin, UpdateView):
+    model = Location
+    success_url = reverse_lazy('multivers:index')
+    fields = '__all__'
+
+
+class SettingsUpdate(LoginRequiredMixin, UpdateView):
+    model = Settings
+    success_url = reverse_lazy('multivers:index')
+    fields = '__all__'

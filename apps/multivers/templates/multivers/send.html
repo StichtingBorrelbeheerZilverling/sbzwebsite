@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+    <table>
+    <tr><th>Costumer</th><th>Order id</th><th>Total order amount</th></tr>
+        {% for line in result %}
+            <tr>
+                <td>{{ line.0 }}</td>
+                <td>{{ line.1 }}</td>
+                <td>{{ line.2 }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <a href="{% url 'multivers:clear_cache' %}">Upload new file</a><br>
+{% endblock %}

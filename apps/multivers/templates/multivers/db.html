@@ -2,6 +2,6 @@
 
 {% block content %}
     {% for db in dbs %}
-        <a href="./db/{{ db.name }}">{{ db.name }} {{ db.value }}</a><br>
+        <a href="{% url 'select_db' db.name %}">{{ db.name }} {{ db.value }}</a><br>
     {% endfor %}
 {% endblock %}
