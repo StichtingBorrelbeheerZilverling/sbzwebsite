@@ -20,7 +20,7 @@ class Settings(models.Model):
             return "{}: Not set".format(self.key)
 
     def get_absolute_url(self):
-        return reverse('multivers:setting_update', args=(self.pk,))
+        return reverse('multivers:settings_update', args=(self.pk,))
 
 
 class Product(models.Model):

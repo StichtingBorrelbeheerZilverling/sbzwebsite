@@ -12,5 +12,5 @@ urlpatterns = [
     url(r'^costumer/(?P<pk>.+)/edit$', view=views.CostumerUpdate.as_view(), name='costumer_update'),
     url(r'^product/(?P<pk>.+)/edit$', view=views.ProductUpdate.as_view(), name='product_update'),
     url(r'^location/(?P<pk>.+)/edit$', view=views.LocationUpdate.as_view(), name='location_update'),
-    url(r'^settings/(?P<pk>.+)/edit$', view=views.SettingsUpdate.as_view(), name='setting_update'),
+    url(r'^settings/(?P<pk>.+)/edit$', view=views.SettingsUpdate.as_view(), name='settings_update'),
 ]

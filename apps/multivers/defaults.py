@@ -19,13 +19,14 @@ months = [
 
 
 class OrderLine(dict):
-    def __init__(self, line_date, **kwargs):
+    def __init__(self, line_date, drink_name, **kwargs):
         self.date = datetime.strptime(line_date, "%d-%m-%Y")
+        self.drink_name = drink_name
 
         super(OrderLine, self).__init__(**kwargs)
 
     def __eq__(self, other):
-        return self.date.__eq__(other.date) and self['productId'] == other['productId']
+        return self.date.__eq__(other.date) and self['productId'] == other['productId'] and self.drink_name == other.drink_name
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -33,14 +34,13 @@ class OrderLine(dict):
     def __lt__(self, other):
         if not self.date.__eq__(other.date):
             return self.date.__lt__(other.date)
+        elif not self.drink_name.__eq__(other.drink_name):
+            return self.drink_name.__lt__(other.drink_name)
         else:
             return self['productId'].__lt__(other['productId'])
 
     def __le__(self, other):
-        if not self.date.__eq__(other.date):
-            return self.date.__le__(other.date)
-        else:
-            return self['productId'].__le__(other['productId'])
+        return self.__eq__(other) or self.__lt__(other)
 
     def __gt__(self, other):
         return not self.__le__(other)
@@ -102,7 +102,7 @@ def make_order(costumer_name: str, orderlines: list):
 def make_orderline(product_id: int, amount: float, drink_name: str, date_drink: str, discount: bool):
     product = Product.objects.get(alexia_id=product_id)
     from apps.multivers import views
-    return OrderLine(date_drink,
+    return OrderLine(date_drink, drink_name,
                      # accountId=product.multivers_id,
                      autoCalculatePrice=True,
                      autoUnmatchToPurchase=False,
