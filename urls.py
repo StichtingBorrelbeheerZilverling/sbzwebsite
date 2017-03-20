@@ -19,5 +19,5 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^multivers/', include('apps.multivers.urls', namespace='multivers')),
-    url(r'^$', include('apps.general.urls')),
+    url(r'', include('apps.general.urls', namespace='general')),
 ]

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-12 23:25+0100\n"
+"POT-Creation-Date: 2017-03-20 20:34+0100\n"
 "PO-Revision-Date: 2017-01-12 23:22+0100\n"
 "Last-Translator: Wouter Kobes <w.j.kobes@student.utwente.nl>\n"
 "Language: NL\n"
@@ -17,6 +17,10 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: apps/multivers/templates/multivers/no_oauth.html:5
+msgid "SBZ -- No Multivers OAUTH key"
+msgstr "SBZ -- Geen Multivers OAUTH key"
+
 #: settings/default.py:23
 msgid "Dutch"
 msgstr "Nederlands"
@@ -24,3 +28,35 @@ msgstr "Nederlands"
 #: settings/default.py:24
 msgid "English"
 msgstr "Engels"
+
+#: templates/base.html:35
+msgid "Toggle navigation"
+msgstr "Navigatie"
+
+#: templates/base.html:46
+msgid "Home"
+msgstr "Voorpagina"
+
+#: templates/base.html:47
+msgid "Construction"
+msgstr "Constructie"
+
+#: templates/base.html:48
+msgid "Contact"
+msgstr "Contact"
+
+#: templates/base.html:51
+msgid "Login"
+msgstr "Inloggen"
+
+#: templates/general/construction.html:5
+msgid "SBZ -- Construction"
+msgstr "SBZ -- Constructie"
+
+#: templates/general/contact.html:5
+msgid "SBZ -- Contact"
+msgstr "SBZ -- Contact"
+
+#: templates/general/frontpage.html:5
+msgid "SBZ -- Frontpage"
+msgstr "SBZ -- Voorpagina"
