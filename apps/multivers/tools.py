@@ -2,6 +2,7 @@ import json
 import time
 import traceback
 from datetime import datetime
+from urllib import parse
 
 import requests
 from django.http import HttpResponse
@@ -11,7 +12,7 @@ from django.urls import reverse
 import settings
 from apps.multivers.models import Settings
 
-REDIRECT_URL = "http://www.sbz.utwente.nl/test.php"
+REDIRECT_URL = "http://www.sbz.utwente.nl"
 token_expires = 0
 
 
@@ -51,7 +52,8 @@ def oauth(request):
 
     if Settings.objects.filter(key='access_token').exists() and Settings.objects.get(key='access_token').value:
         if token_expires < time.time():
-            get_access_token(token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value, grant_type='refresh_token')
+            get_access_token(token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value,
+                             grant_type='refresh_token')
         return
     else:
         if Settings.objects.filter(key='auth_code').exists():
@@ -59,9 +61,11 @@ def oauth(request):
             return get_access_token(token=auth_code.value)
         else:
             return render(request, 'multivers/no_oauth.html', {
-                'mv_client_id': settings.mv_client_id,
-                'mv_redirect_url': REDIRECT_URL,
-                'mv_scope': "http://UNIT4.Multivers.API/Web/WebApi/*",
+                'mv_oauth_url': "https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
+                    settings.mv_client_id,
+                    parse.urljoin(REDIRECT_URL, reverse('multivers:code')),
+                    "http://UNIT4.Multivers.API/Web/WebApi/*",
+                )
             })
 
 
@@ -93,7 +97,8 @@ def get_access_token(token_type='code', token=None, grant_type='authorization_co
     else:
         Settings.objects.filter(key='auth_code').delete()
         Settings.objects.filter(key='access_token').delete()
-        return HttpResponse('ERROROROROROR: ' + str(response.status_code) + ' ' + str(response.content) + '\n auth_token and access_token deleted')
+        return HttpResponse('ERROROROROROR: ' + str(response.status_code) + ' ' + str(
+            response.content) + '\n auth_token and access_token deleted')
 
 
 def get_administrations():

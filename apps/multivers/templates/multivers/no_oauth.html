@@ -7,6 +7,6 @@
 {% block content %}
 <p>
     No OAUTH keys found, so you will have to request them by clicking the following link: <br>
-<a href="https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={{ mv_client_id }}&redirect_uri={{ mv_redirect_url }}&scope={{ mv_scope }}&response_type=code">https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={{ mv_client_id }}&redirect_uri={{ mv_redirect_url }}&scope={{ mv_scope }}&response_type=code</a>
+<a href="{{ mv_oauth_url }}">{{ mv_oauth_url }}</a>
 </p>
 {% endblock %}
