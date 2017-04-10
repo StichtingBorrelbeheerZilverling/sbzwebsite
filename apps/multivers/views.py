@@ -109,7 +109,7 @@ class SaveCode(LoginRequiredMixin, RedirectView):
         if 'code' in kwargs and kwargs['code']:
             tools.save_setting(key='auth_code', value=unquote(kwargs['code']))
         elif 'code' in request.GET and request.GET['code']:
-            tools.save_setting(key='auth_code', value=unquote(request.GET['code']))
+            tools.save_setting(key='auth_code', value=request.GET['code'])
         return super(SaveCode, self).dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, *args, **kwargs):
