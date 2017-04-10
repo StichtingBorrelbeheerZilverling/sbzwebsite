@@ -106,9 +106,9 @@ class SendToMultivers(LoginRequiredMixin, View):
 
 class SaveCode(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
-        if 'code' in kwargs:
+        if 'code' in kwargs and kwargs['code']:
             tools.save_setting(key='auth_code', value=unquote(kwargs['code']))
-        elif 'code' in request.GET:
+        elif 'code' in request.GET and request.GET['code']:
             tools.save_setting(key='auth_code', value=unquote(request.GET['code']))
         return super(SaveCode, self).dispatch(request, *args, **kwargs)
 
