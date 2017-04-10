@@ -78,7 +78,7 @@ def get_access_token(token_type='code', token=None, grant_type='authorization_co
             token,
             settings.mv_client_id,
             settings.mv_client_secret,
-            REDIRECT_URL,
+            parse.urljoin(REDIRECT_URL, reverse('multivers:code')),
             grant_type,
         ),
         headers={'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'UTF-8'},
