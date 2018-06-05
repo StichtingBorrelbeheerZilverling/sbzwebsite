@@ -1,1 +1,2 @@
 django-debug-toolbar
+django>=1.11,<1.12
