@@ -9,7 +9,9 @@ ADMINS = ()
 MANAGERS = ADMINS
 
 # Hostnames
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'ia-beta.ia.utwente.nl',
+]
 
 # Database
 DATABASES = {
