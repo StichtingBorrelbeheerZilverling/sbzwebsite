@@ -100,3 +100,4 @@ STATIC_URL = '/static/'
 LOGIN_URL = 'admin:login'
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
+
