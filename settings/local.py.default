@@ -2,7 +2,6 @@
 
 # Debug aan voor lokaal
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 # Admins die exceptie-notificaties krijgen
 ADMINS = ()
