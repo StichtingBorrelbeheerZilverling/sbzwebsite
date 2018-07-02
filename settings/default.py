@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'sslserver',
+
     'apps.general',
     'apps.multivers',
 ]
@@ -100,3 +102,5 @@ STATICFILES_DIRS = [
 ]
 STATIC_URL = '/static/'
 LOGIN_URL = 'admin:login'
+
+MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
