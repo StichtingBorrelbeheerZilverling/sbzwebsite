@@ -1,0 +1,7 @@
+body {
+    overflow-y: scroll;
+}
+
+.dropdown-menu form {
+    min-width: 20rem;
+}
