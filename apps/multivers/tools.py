@@ -51,13 +51,14 @@ def oauth(request):
 
     if Settings.objects.filter(key='access_token').exists() and Settings.objects.get(key='access_token').value:
         if token_expires < time.time():
-            get_access_token(token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value,
+            get_access_token(request=request,
+                             token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value,
                              grant_type='refresh_token')
         return
     else:
         if Settings.objects.filter(key='auth_code').exists():
             auth_code = Settings.objects.get(key='auth_code')
-            return get_access_token(token=auth_code.value)
+            return get_access_token(request=request, token=auth_code.value)
         else:
             return render(request, 'multivers/no_oauth.html', {
                 'mv_oauth_url': "https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
@@ -68,7 +69,7 @@ def oauth(request):
             })
 
 
-def get_access_token(token_type='code', token=None, grant_type='authorization_code'):
+def get_access_token(request, token_type='code', token=None, grant_type='authorization_code'):
     global token_expires
     response = requests.post(
         url="https://api.online.unit4.nl/V19/OAuth/Token",
@@ -77,7 +78,7 @@ def get_access_token(token_type='code', token=None, grant_type='authorization_co
             token,
             settings.mv_client_id,
             settings.mv_client_secret,
-            parse.urljoin(REDIRECT_URL, reverse('multivers:code')),
+            request.build_absolute_uri(reverse('multivers:code')),
             grant_type,
         ),
         headers={'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'UTF-8'},
