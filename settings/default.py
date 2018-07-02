@@ -41,8 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'sslserver',
-
     'apps.general',
     'apps.multivers',
 ]
