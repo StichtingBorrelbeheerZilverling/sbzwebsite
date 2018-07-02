@@ -12,7 +12,6 @@ from django.urls import reverse
 import settings
 from apps.multivers.models import Settings
 
-REDIRECT_URL = "http://www.sbz.utwente.nl"
 token_expires = 0
 
 
@@ -63,7 +62,7 @@ def oauth(request):
             return render(request, 'multivers/no_oauth.html', {
                 'mv_oauth_url': "https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
                     settings.mv_client_id,
-                    parse.urljoin(REDIRECT_URL, reverse('multivers:code')),
+                    request.build_absolute_uri(reverse('multivers:code')),
                     "http://UNIT4.Multivers.API/Web/WebApi/*",
                 )
             })
