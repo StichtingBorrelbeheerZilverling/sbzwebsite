@@ -10,7 +10,10 @@ urlpatterns = [
     url(r'^send/$', view=views.SendToMultivers.as_view(), name='send'),
     url(r'^upload/$', view=views.UploadJsonData.as_view(), name='upload'),
     url(r'^costumer/(?P<pk>.+)/edit$', view=views.CostumerUpdate.as_view(), name='costumer_update'),
-    url(r'^product/(?P<pk>.+)/edit$', view=views.ProductUpdate.as_view(), name='product_update'),
     url(r'^location/(?P<pk>.+)/edit$', view=views.LocationUpdate.as_view(), name='location_update'),
     url(r'^settings/(?P<pk>.+)/edit$', view=views.SettingsUpdate.as_view(), name='settings_update'),
+
+    url(r'^products', view=views.Products.as_view(), name='products'),
+    url(r'^product/(?P<pk>.+)/edit$', view=views.ProductUpdate.as_view(), name='product_update'),
+    url(r'^product/(?P<pk>.+)/delete$', view=views.ProductDelete.as_view(), name='product_delete')
 ]

@@ -1,8 +1,9 @@
 import json
 
-from django.forms import forms
+from django.forms import forms, ModelForm
 
 from apps.multivers import tools
+from apps.multivers.models import Product
 
 
 class FileForm(forms.Form):
@@ -21,3 +22,9 @@ class FileForm(forms.Form):
         else:
             self.add_error('file', 'Incorrect format. Missing or incorrect formatting:\n{}'.format(error))
         return cleaned_data
+
+
+class ProductForm(ModelForm):
+    class Meta:
+        model = Product
+        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'margin']

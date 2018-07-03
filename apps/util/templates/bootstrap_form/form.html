@@ -1,0 +1,7 @@
+{% load bootstrap_form %}
+
+{{ form.non_field_errors|bootstrap_form_errors }}
+
+{% for field in form %}
+    {{ field|bootstrap_form_field }}
+{% endfor %}

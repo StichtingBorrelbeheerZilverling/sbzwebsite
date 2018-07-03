@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     'apps.general',
     'apps.multivers',
+    'apps.util',
 ]
 
 MIDDLEWARE_CLASSES = [

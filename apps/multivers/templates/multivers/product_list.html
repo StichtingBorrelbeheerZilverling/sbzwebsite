@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th colspan="2">{% trans 'Alexia Name' %}</th>
+            <th colspan="2">{% trans 'Multivers Name' %}</th>
+            <th>{% trans 'Margin?' %}</th>
+            <th><!-- Buttons --></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for product in product_list %}
+            <tr>
+                <td>{{ product.alexia_id }}</td>
+                <td>{{ product.alexia_name }}</td>
+                <td>{{ product.multivers_id }}</td>
+                <td>{{ product.multivers_name }}</td>
+                <td>
+                    {% if product.margin %}
+                        {% trans 'Yes' %}
+                    {% else %}
+                        {% trans 'No' %}
+                    {% endif %}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+                            data-target="#edit-{{ product.pk }}">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#delete-{{ product.pk }}">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block modals %}
+    {% for product in product_list %}
+        <form method="POST" action="{% url 'multivers:product_update' product.pk %}">
+            {% csrf_token %}
+            <div class="modal fade" id="edit-{{ product.pk }}" tabindex="-1" role="dialog"
+                 aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit {{ product }}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {{ product.edit_form|bootstrap_form }}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+                            <input type="submit" class="btn btn-primary" value="{% trans 'Save' %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <form method="POST" action="{% url 'multivers:product_delete' product.pk %}">
+            {% csrf_token %}
+            <div class="modal fade" id="delete-{{ product.pk }}" tabindex="-1" role="dialog"
+                 aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Delete {{ product }}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {% blocktrans %}
+                                Are you sure you want to delete the product "{{ product }}"?
+                            {% endblocktrans %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+                            <input type="submit" class="btn btn-danger" value="{% trans 'Delete' %}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endfor %}
+{% endblock %}

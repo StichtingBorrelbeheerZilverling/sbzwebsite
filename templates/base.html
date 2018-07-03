@@ -15,13 +15,14 @@
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/bootstrap-grid.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/open-iconic-bootstrap.min.css' %}">
 </head>
 <body>
 <form id="logout" method="POST" action="{% url 'general:logout' %}" style="display: none">
     {% csrf_token %}
 </form>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
     <div class="container">
         <a class="navbar-brand" href="{% url 'general:index' %}">SBZ</a>
 
@@ -31,7 +32,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav mr-auto">
+            <ul class="nav navbar-nav mr-auto">
                 <li class="nav-item {% if active_id == "home" %}active{% endif %}">
                     <a class="nav-link" href="{% url 'general:index' %}">{% trans 'Home' %}</a>
                 </li>
@@ -42,21 +43,26 @@
                     <a class="nav-link" href="{% url 'general:contact' %}">{% trans 'Contact' %}</a>
                 </li>
                 {% if user.is_authenticated %}
-                    <li class="nav-item {% if active_id == "multivers" %}active{% endif %}">
-                        <a class="nav-link" href="{% url 'multivers:index' %}">
-                            Multivers
+                    <li class="dropdown {% if active_id == "multivers" %}active{% endif %}">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+                            {% trans 'Multivers' %}
                             <span class="caret"></span>
                         </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url 'multivers:products' %}" class="dropdown-item">{% trans 'Products' %}</a>
+                            </li>
+                        </ul>
                     </li>
                 {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li class="dropdown {% if messages %}show{% endif %}">
-                    <a class="dropdown-toggle" role="button" data-toggle="dropdown" href="#">
+                    <a class="nav-link dropdown-toggle" role="button" data-toggle="dropdown" href="#">
                         {% if user.is_authenticated %}
                             {{ user.first_name }}
                         {% else %}
-                            Login
+                            {% trans 'Login' %}
                         {% endif %}
                         <span class="caret"></span>
                     </a>
@@ -94,8 +100,11 @@
         </div>
     </div>
 </nav>
+
 <div class="container">
     {% block content %}{% endblock %}
 </div>
+
+{% block modals %}{% endblock %}
 </body>
 </html>

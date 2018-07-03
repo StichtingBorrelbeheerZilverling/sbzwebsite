@@ -7,12 +7,12 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.urls import reverse_lazy
-from django.views.generic import FormView
+from django.views.generic import FormView, ListView, DeleteView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView, View
 
 from apps.multivers.defaults import make_orderline, make_order
-from apps.multivers.forms import FileForm
+from apps.multivers.forms import FileForm, ProductForm
 from . import tools
 from .models import Settings, Costumer, Product, Location
 
@@ -154,13 +154,6 @@ class CostumerUpdate(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('multivers:index')
     fields = '__all__'
 
-
-class ProductUpdate(LoginRequiredMixin, UpdateView):
-    model = Product
-    success_url = reverse_lazy('multivers:index')
-    fields = '__all__'
-
-
 class LocationUpdate(LoginRequiredMixin, UpdateView):
     model = Location
     success_url = reverse_lazy('multivers:index')
@@ -171,3 +164,27 @@ class SettingsUpdate(LoginRequiredMixin, UpdateView):
     model = Settings
     success_url = reverse_lazy('multivers:index')
     fields = '__all__'
+
+
+class Products(LoginRequiredMixin, ListView):
+    model = Product
+    ordering = ['multivers_id']
+
+    def get_context_data(self, **kwargs):
+        ctx = super(Products, self).get_context_data(**kwargs)
+
+        for product in ctx['product_list']:
+            product.edit_form = ProductForm(instance=product)
+
+        return ctx
+
+
+class ProductUpdate(LoginRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    success_url = reverse_lazy('multivers:products')
+
+
+class ProductDelete(LoginRequiredMixin, DeleteView):
+    model = Product
+    success_url = reverse_lazy('multivers:products')

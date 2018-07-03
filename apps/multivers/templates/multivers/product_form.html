@@ -1,9 +1,11 @@
 {% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
 {% block content %}
     <form action="#" method="post" class="form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Update</button>
+        {{ form|bootstrap_form }}
+        <a href="{% url 'multivers:products' %}" class="btn btn-secondary">Back</a>
+        <input type="submit" class="btn btn-primary float-right" value="Update">
     </form>
-    <a href="{% url 'multivers:index' %}">Back</a>
 {% endblock %}
