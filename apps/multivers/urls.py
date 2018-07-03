@@ -15,5 +15,7 @@ urlpatterns = [
 
     url(r'^products', view=views.Products.as_view(), name='products'),
     url(r'^product/(?P<pk>.+)/edit$', view=views.ProductUpdate.as_view(), name='product_update'),
-    url(r'^product/(?P<pk>.+)/delete$', view=views.ProductDelete.as_view(), name='product_delete')
+    url(r'^product/(?P<pk>.+)/delete$', view=views.ProductDelete.as_view(), name='product_delete'),
+
+    url(r'^test$', view=views.test, name='test'),
 ]

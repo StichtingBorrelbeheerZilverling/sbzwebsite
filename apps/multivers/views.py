@@ -1,4 +1,6 @@
 import json
+
+from datetime import datetime
 import re
 from urllib.parse import unquote
 
@@ -13,6 +15,7 @@ from django.views.generic.base import RedirectView, View
 
 from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm
+from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
 from . import tools
 from .models import Settings, Costumer, Product, Location
 
@@ -188,3 +191,28 @@ class ProductUpdate(LoginRequiredMixin, UpdateView):
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
     success_url = reverse_lazy('multivers:products')
+
+
+def test(request):
+    multivers = Multivers(request)
+
+    line = MultiversOrderLine(date=datetime.now(),
+                              description="DiMiBo - Grolsch Premiumbier",
+                              discount=0.05,
+                              product_id="2001",
+                              quantity=105.0)
+
+    order = MultiversOrder(date=datetime.now(),
+                           reference="Borrels Juni",
+                           payment_condition_id="14",
+                           customer_id="2008001",
+                           customer_vat_type="1",
+                           processor_id=38,
+                           processor_name="Pieter Bos")
+
+    order.add_line(line)
+    order.add_line(line)
+
+    response = multivers.create_order("MVL48759", order)
+
+    return HttpResponse(json.dumps(response), content_type="application/json")

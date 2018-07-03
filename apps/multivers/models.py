@@ -19,6 +19,17 @@ class Settings(models.Model):
         else:
             return "{}: Not set".format(self.key)
 
+    @staticmethod
+    def get(setting):
+        setting = Settings.objects.filter(key=setting).first()
+        return setting.value if setting is not None else None
+
+    @staticmethod
+    def set(setting, value):
+        setting, _ = Settings.objects.get_or_create(key=setting)
+        setting.value = value
+        setting.save()
+
     def get_absolute_url(self):
         return reverse('multivers:settings_update', args=(self.pk,))
 

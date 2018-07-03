@@ -1,7 +1,8 @@
 import json
 import time
 import traceback
-from datetime import datetime
+from collections import OrderedDict
+from datetime import datetime, timedelta
 from urllib import parse
 
 import requests
@@ -12,7 +13,219 @@ from django.urls import reverse
 import settings
 from apps.multivers.models import Settings
 
-token_expires = 0
+
+class MultiversOrderLine:
+    def __init__(self,
+                 date,
+                 description,
+                 discount,
+                 product_id,
+                 quantity,
+                 revenue_account=None):
+        self.date = date
+        self.description = description
+        self.discount = discount
+        self.product_id = product_id
+        self.quantity = quantity
+        self.revenue_account = revenue_account
+
+    def as_dict(self):
+        result = {
+            "autoCalculatePrice": True,
+            "autoUnmatchToPurchase": False,
+            "canChange": True,
+            "costCentreId": "",
+            "costUnitId": "",
+            "deliveryDate": self.date.strftime("%d-%m-%Y 0:00:00"),
+            "description": self.description,
+            "discount": self.discount,
+            "matchedToPurchase": False,
+            "messages": [],
+            "orderLineAmount": self.quantity,
+            "orderLineType": 0,
+            "pickListText": False,
+            "productId": self.product_id,
+            "quantityBackorder": 0,
+            "quantityDelivered": self.quantity,
+            "quantityOrdered": self.quantity,
+            "quantityScale": 0,
+            "quantityToDeliver": 0,
+            "warehouseId": "",
+        }
+
+        if self.revenue_account:
+            result["accountId"] = self.revenue_account
+            result["discountAccountId"] = self.revenue_account
+
+        return result
+
+
+class MultiversOrder:
+    def __init__(self,
+                 date,
+                 reference,
+                 payment_condition_id,
+                 customer_id,
+                 customer_vat_type,
+                 processor_id,
+                 processor_name,
+                 lines=None):
+        self.date = date
+        self.reference = reference
+        self.payment_condition_id = payment_condition_id
+        self.customer_id = customer_id
+        self.customer_vat_type = customer_vat_type
+        self.processor_id = processor_id
+        self.processor_name = processor_name
+
+        self.lines = lines or []
+
+    def add_line(self, line):
+        self.lines.append(line)
+
+    def as_dict(self):
+        lines = [line.as_dict() for line in self.lines]
+
+        return {
+            "accountManager": "",
+            "accountManagerId": "",
+            "messages": [],
+            "applyOrderSurcharge": False,
+            "approved": True,
+            "approvedBy": "",
+            "autoUnmatchToPurchase": False,
+            "blocked": False,
+            "canChange": True,
+            "chargeVatType": self.customer_vat_type,
+            "collectiveInvoiceSystemId": "",
+            "contactPerson": "",
+            "contactPersonId": "",
+            "costCentreId": "",
+            "costUnitId": "",
+            "creditSqueezePerc": 0.0,
+            "currencyId": "",
+            "customerCountryId": "",
+            "customerId": self.customer_id,
+            "deliveryConditionId": "",
+            "discountPercentage": 0.0,
+            "mainOrderId": "",
+            "mandateId": "",
+            "matchedToPurchase": False,
+            "orderDate": self.date.strftime("%d-%m-%Y"),
+            "orderLines": lines,
+            "orderState": 1,
+            "orderSurcharge": 0.0,
+            "orderSurchargeVatCodeId": 0,
+            "orderType": 0,
+            "paymentConditionId": self.payment_condition_id,
+            "processedBy": self.processor_name,
+            "processedById": self.processor_id,
+            "projectId": "",
+            "reference": self.reference,
+            "totalCreditSqueezeAmount": 0.0,
+            "totalDiscountAmount": 0.0,
+            "vatScenarioId": 6, # Verkoop Binnenland
+        }
+
+
+class Multivers:
+    BASE_URL = "https://api.online.unit4.nl/V19/"
+    EXPIRE_MARGIN = 5*60 # seconds
+
+    def __init__(self, request, client_id=None, client_secret=None):
+        self.request = request
+        self.client_id = client_id or settings.mv_client_id
+        self.client_secret = client_secret or settings.mv_client_secret
+
+        self.access_token = Settings.get("access_token")
+        self.refresh_token = Settings.get("refresh_token")
+
+        # TODO: just save the expire datetime
+        acquired = Settings.get("access_token_acquired")
+        expires_in = Settings.get("expires_in")
+
+        if acquired and expires_in:
+            self.access_token_expiry = datetime.fromtimestamp(float(acquired)) \
+                                       + timedelta(seconds=int(expires_in)-Multivers.EXPIRE_MARGIN)
+            print(self.access_token_expiry)
+        else:
+            self.access_token_expiry = None
+
+        self.auth_code = Settings.get("auth_code")
+
+        self._auth()
+
+    @staticmethod
+    def instantiate_or_redirect(request, *args, **kwargs):
+        try:
+            return Multivers(request, *args, **kwargs)
+        except Exception:
+            raise redirect(Multivers.BASE_URL + "OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
+                settings.mv_client_id,
+                request.build_absolute_uri(reverse('multivers:code')),
+                "http://UNIT4.Multivers.API/Web/WebApi/*",
+            ))
+
+    def _request_token(self, token_type, token, grant_type):
+        response = requests.post(Multivers.BASE_URL + "OAuth/Token", data={
+            token_type: token,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            # TODO: replace with actual host
+            "redirect_uri": "https://www.sbz.utwente.nl/" + (reverse("multivers:code")),
+            "grant_type": grant_type,
+        })
+
+        if response.status_code != 200:
+            raise Exception("Unknown response from the multivers API:\nStatus code: {}\n{}".format(response.status_code, response.text))
+
+        data = response.json()
+
+        self.refresh_token = data['refresh_token']
+        self.access_token = data['access_token']
+        self.access_token_expiry = datetime.utcnow() + timedelta(seconds=int(data['expires_in'])-Multivers.EXPIRE_MARGIN)
+
+        Settings.set('refresh_token', self.refresh_token)
+        Settings.set('access_token', self.access_token)
+        Settings.set('expires_in', data['expires_in'])
+        Settings.set('access_token_acquired', str(time.time()))
+
+    def _auth(self):
+        now = datetime.utcnow()
+
+        if self.access_token and self.access_token_expiry <= now:
+            pass
+        elif self.access_token and self.access_token_expiry > now:
+            self._request_token("refresh_token", self.refresh_token, "refresh_token")
+        elif self.auth_code:
+            self._request_token("code", self.auth_code, "authorization_code")
+        else:
+            raise Exception("Tokens are not present; request a new authorization code.")
+
+    def _get(self, method):
+        response = requests.get(Multivers.BASE_URL + "api/" + method, headers={
+            'Authorization': 'Bearer {}'.format(self.access_token),
+            'Accept': 'application/json',
+        })
+
+        return response.json()
+
+    def _post(self, method, data):
+        response = requests.post(Multivers.BASE_URL + "api/" + method, headers={
+            'Authorization': 'Bearer {}'.format(self.access_token),
+            'Accept': 'application/json',
+        }, json=data)
+
+        return response.json()
+
+    def get_administrations(self):
+        return self._get("AdministrationNVL")
+
+    def get_order_info(self, administration, order_id):
+        return self._get("{}/OrderInfo/{}".format(administration, order_id))
+
+    def create_order(self, administration, order):
+        return self._post("{}/Order".format(administration), order.as_dict())
 
 
 def check_json_upload(data):
@@ -35,93 +248,3 @@ def check_json_upload(data):
         return traceback.format_exc()
     except ValueError:
         return traceback.format_exc()
-
-
-def save_setting(key, value=None):
-    if key and value:
-        setting, ignore = Settings.objects.get_or_create(key=key)
-        setting.value = value
-        setting.save()
-
-
-def oauth(request):
-    for x in ['mv_client_id', 'mv_client_secret']:
-        if not hasattr(settings, x) or not getattr(settings, x):
-            raise Exception('The variable "{}" is not set in the settings.'.format(x))
-
-    if Settings.objects.filter(key='access_token').exists() and Settings.objects.get(key='access_token').value:
-        if token_expires < time.time():
-            get_access_token(request=request,
-                             token_type='refresh_token', token=Settings.objects.get(key='refresh_token').value,
-                             grant_type='refresh_token')
-        return
-    else:
-        if Settings.objects.filter(key='auth_code').exists():
-            auth_code = Settings.objects.get(key='auth_code')
-            return get_access_token(request=request, token=auth_code.value)
-        else:
-            return render(request, 'multivers/no_oauth.html', {
-                'mv_oauth_url': "https://api.online.unit4.nl/V19/OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
-                    settings.mv_client_id,
-                    request.build_absolute_uri(reverse('multivers:code')),
-                    "http://UNIT4.Multivers.API/Web/WebApi/*",
-                )
-            })
-
-
-def get_access_token(request, token_type='code', token=None, grant_type='authorization_code'):
-    global token_expires
-    response = requests.post(
-        url="https://api.online.unit4.nl/V19/OAuth/Token",
-        data='{}={}&client_id={}&client_secret={}&redirect_uri={}&grant_type={}'.format(
-            token_type,
-            token,
-            settings.mv_client_id,
-            settings.mv_client_secret,
-            request.build_absolute_uri(reverse('multivers:code')),
-            grant_type,
-        ),
-        headers={'Content-Type': 'application/x-www-form-urlencoded', 'charset': 'UTF-8'},
-    )
-
-    if response.status_code == 200:
-        content = json.loads(response.content.decode("utf-8", "strict"))
-
-        save_setting('refresh_token', content['refresh_token'])
-        save_setting('token_type', content['token_type'])
-        save_setting('expires_in', content['expires_in'])
-        save_setting('access_token', content['access_token'])
-        save_setting('access_token_acquired', str(time.time()))
-        token_expires = time.time() + int(content['expires_in']) - 2
-        return redirect(reverse('multivers:index'))
-    else:
-        Settings.objects.filter(key='auth_code').delete()
-        Settings.objects.filter(key='access_token').delete()
-        return HttpResponse('ERROROROROROR: ' + str(response.status_code) + ' ' + str(
-            response.content) + '\n auth_token and access_token deleted')
-
-
-def get_administrations():
-    response = requests.get(
-        url="https://api.online.unit4.nl/V19/api/AdministrationNVL",
-        headers={
-            'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(Settings.objects.get(key='access_token').value),
-        })
-    if response.status_code == 200:
-        return json.loads(response.content.decode("utf-8", "strict"))
-    else:
-        raise Exception('Error connecting to the api: {}'.format(response.content))
-
-
-def send_to_multivers(order: dict):
-    response = requests.post(
-        url="https://api.online.unit4.nl/V19/api/{}/Order".format(Settings.objects.get(key='db').value),
-        headers={
-            'Accept': 'application/json',
-            'Authorization': 'Bearer {}'.format(Settings.objects.get(key='access_token').value),
-            'content-type': 'application/json',
-        },
-        json=order,
-    )
-    return response.status_code == 200, response
