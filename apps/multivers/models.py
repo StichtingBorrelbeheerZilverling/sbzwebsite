@@ -90,3 +90,21 @@ class Location(models.Model):
 
     def get_absolute_url(self):
         return reverse('multivers:location_update', args=(self.pk,))
+
+
+class ConceptOrder(models.Model):
+    date = models.DateField()
+    customer = models.ForeignKey("multivers.Customer")
+
+
+class ConceptOrderDrink(models.Model):
+    order = models.ForeignKey("multivers.ConceptOrder")
+    date = models.DateField()
+    name = models.CharField(max_length=255)
+    locations = models.ManyToManyField("multivers.Location")
+
+
+class ConceptOrderDrinkLine(models.Model):
+    drink = models.ForeignKey("multivers.ConceptOrderDrink")
+    product = models.ForeignKey("multivers.Product")
+    amount = models.FloatField()

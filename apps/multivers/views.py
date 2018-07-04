@@ -17,22 +17,21 @@ from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm
 from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
 from . import tools
-from .models import Settings, Customer, Product, Location
+from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 DISCOUNT = 'discount'
 
 data_cache = {}
 
-
-
 # Settings to check: DISCOUNT, db,
+
 
 class Index(LoginRequiredMixin, View):
     def get(self, request):
-        multivers, redirect = Multivers.instantiate_or_redirect(request)
+        multivers, do_redirect = Multivers.instantiate_or_redirect(request)
 
-        if redirect:
-            return redirect
+        if do_redirect:
+            return do_redirect
 
         if request.user in data_cache:
             cache = data_cache[request.user]
@@ -127,8 +126,46 @@ class UploadJsonData(LoginRequiredMixin, FormView):
     template_name = 'multivers/file_upload.html'
     success_url = reverse_lazy('multivers:index')
 
+    def _create_missing_objects(self, data):
+        for customer in data['drinks'].keys():
+            if not Customer.objects.filter(alexia_name=customer).exists():
+                customer = Customer()
+                customer.alexia_name = customer
+                customer.save()
+
+        for product_id, product_name in data['products'].items():
+            product, _ = Product.objects.get_or_create(alexia_id=product_id)
+            product.alexia_name = product_name
+            product.save()
+
     def form_valid(self, form):
-        data_cache[self.request.user] = form.cleaned_json
+        data = form.cleaned_json
+
+        self._create_missing_objects(data)
+
+        for customer_name, drinks in data['drinks'].items():
+            order = ConceptOrder()
+            order.customer = Customer.objects.get(alexia_name=customer_name)
+            order.date = datetime.now()
+            order.save()
+
+            for drink in drinks:
+                order_drink = ConceptOrderDrink()
+                order_drink.order = order
+                order_drink.date = datetime.strptime(drink['date'], '%d-%m-%Y')
+                order_drink.name = drink['drink_name']
+                order_drink.save()
+
+                for location in drink['location']:
+                    order_drink.locations.add(Location.objects.get(name=location))
+
+                for product_id, quantity in drink['products'].items():
+                    order_drink_line = ConceptOrderDrinkLine()
+                    order_drink_line.drink = order_drink
+                    order_drink_line.product = Product.objects.get(alexia_id=product_id)
+                    order_drink_line.amount = quantity
+                    order_drink_line.save()
+
         return super(UploadJsonData, self).form_valid(form)
 
 

@@ -226,25 +226,3 @@ class Multivers:
 
     def create_order(self, administration, order):
         return self._post("{}/Order".format(administration), order.as_dict())
-
-
-def check_json_upload(data):
-    try:
-        for k, v in data['products'].items():
-            int(k)
-        for k, v in data['drinks'].items():
-            for d in v:
-                for pid, pprice in d['products'].items():
-                    int(pid)
-                    float(pprice)
-                datetime.strptime(d['date'], "%d-%m-%Y")
-                if 'drink_name' not in d:
-                    return 'No drink_name in one of the values'
-
-                if 'location' not in d:
-                    return 'No location in one of the values'
-        return
-    except KeyError:
-        return traceback.format_exc()
-    except ValueError:
-        return traceback.format_exc()
