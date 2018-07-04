@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
     <table>
-    <tr><th>Costumer</th><th>Order id</th><th>Total order amount</th></tr>
+    <tr><th>Customer</th><th>Order id</th><th>Total order amount</th></tr>
         {% for line in result %}
             <tr>
                 <td>{{ line.0 }}</td>

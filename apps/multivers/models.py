@@ -58,7 +58,7 @@ class Product(models.Model):
         ordering = ('alexia_name',)
 
 
-class Costumer(models.Model):
+class Customer(models.Model):
     VAT_TYPE = (
         ('0', 'Exclusief BTW'),
         ('1', 'Inclusief BTW'),
@@ -69,7 +69,7 @@ class Costumer(models.Model):
     vat_type = models.CharField(max_length=1, null=True, blank=False, choices=VAT_TYPE)
 
     def get_absolute_url(self):
-        return reverse('multivers:costumer_update', args=(self.pk,))
+        return reverse('multivers:customer_update', args=(self.pk,))
 
     def __str__(self):
         return self.alexia_name

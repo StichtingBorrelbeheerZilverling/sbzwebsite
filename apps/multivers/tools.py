@@ -158,9 +158,9 @@ class Multivers:
     @staticmethod
     def instantiate_or_redirect(request, *args, **kwargs):
         try:
-            return Multivers(request, *args, **kwargs)
+            return Multivers(request, *args, **kwargs), None
         except Exception:
-            raise redirect(Multivers.BASE_URL + "OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
+            return None, redirect(Multivers.BASE_URL + "OAuth/Authorize?client_id={}&redirect_uri={}&scope={}&response_type=code".format(
                 settings.mv_client_id,
                 request.build_absolute_uri(reverse('multivers:code')),
                 "http://UNIT4.Multivers.API/Web/WebApi/*",

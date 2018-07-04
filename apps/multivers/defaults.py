@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from .models import Product, Costumer, Settings
+from .models import Product, Customer, Settings
 
 months = [
     "januari",
@@ -53,7 +53,7 @@ def make_order(costumer_name: str, orderlines: list):
     orderlines = sorted(orderlines)
     for i in range(len(orderlines)):
         orderlines[i]['orderLineId'] = str(i + 1)
-    costumer = Costumer.objects.get(alexia_name=costumer_name)
+    costumer = Customer.objects.get(alexia_name=costumer_name)
 
     month = months[orderlines[0].date.month - 1]
 

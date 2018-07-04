@@ -5,7 +5,7 @@ import re
 from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.urls import reverse_lazy
@@ -17,67 +17,61 @@ from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm
 from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
 from . import tools
-from .models import Settings, Costumer, Product, Location
+from .models import Settings, Customer, Product, Location
 
 DISCOUNT = 'discount'
 
 data_cache = {}
 
 
+
+# Settings to check: DISCOUNT, db,
+
 class Index(LoginRequiredMixin, View):
     def get(self, request):
-        result = tools.oauth(request)
-        if result:
-            return result
-        else:
-            if not Settings.objects.filter(key=DISCOUNT).exists():
-                new_setting = Settings()
-                new_setting.key = DISCOUNT
-                new_setting.save()
-                return redirect(new_setting)
-            if Settings.objects.filter(key=DISCOUNT, value__isnull=True).exists() or not re.match(r'\d+(\.\d+)?', Settings.objects.get(key=DISCOUNT).value):
-                return redirect(Settings.objects.get(key=DISCOUNT))
-            if Settings.objects.filter(key='db').exists():
-                if request.user in data_cache:
-                    cache = data_cache[request.user]
-                    for alexia_id, alexia_name in cache['products'].items():
-                        product = Product.objects.filter(alexia_id=alexia_id)
-                        if product.exists():
-                            first = product.first()
-                            if first.alexia_name != alexia_name:
-                                first.alexia_name = alexia_name
-                                first.save()
-                        else:
-                            new_product = Product()
-                            new_product.alexia_id = alexia_id
-                            new_product.alexia_name = alexia_name
-                            new_product.save()
-                            return redirect(new_product)
+        multivers, redirect = Multivers.instantiate_or_redirect(request)
 
-                    location = set(l for x in [d['location'] for a in cache['drinks'].values() for d in a] for l in x)
-                    db_location = [x[0] for x in Location.objects.all().values_list('name')]
-                    for l in location:
-                        if l not in db_location:
-                            new_location = Location()
-                            new_location.name = l
-                            new_location.save()
-                            return redirect(new_location)
+        if redirect:
+            return redirect
 
-                    costumers = Costumer.objects.filter(alexia_name__in=cache['drinks'].keys())
-                    if costumers.count() >= len(cache['drinks']):
-                        return render(request, 'multivers/index.html', {'discount': Settings.objects.get(key=DISCOUNT)})
-                    else:
-                        for x in cache['drinks'].keys():
-                            if not Costumer.objects.filter(alexia_name=x).exists():
-                                new_costumer = Costumer()
-                                new_costumer.alexia_name = x
-                                new_costumer.save()
-                                return redirect(new_costumer)
-                        raise Exception('State impossible')
+        if request.user in data_cache:
+            cache = data_cache[request.user]
+            for alexia_id, alexia_name in cache['products'].items():
+                product = Product.objects.filter(alexia_id=alexia_id)
+                if product.exists():
+                    first = product.first()
+                    if first.alexia_name != alexia_name:
+                        first.alexia_name = alexia_name
+                        first.save()
                 else:
-                    return redirect(reverse('multivers:upload'))
+                    new_product = Product()
+                    new_product.alexia_id = alexia_id
+                    new_product.alexia_name = alexia_name
+                    new_product.save()
+                    return redirect(new_product)
+
+            location = set(l for x in [d['location'] for a in cache['drinks'].values() for d in a] for l in x)
+            db_location = [x[0] for x in Location.objects.all().values_list('name')]
+            for l in location:
+                if l not in db_location:
+                    new_location = Location()
+                    new_location.name = l
+                    new_location.save()
+                    return redirect(new_location)
+
+            customers = Customer.objects.filter(alexia_name__in=cache['drinks'].keys())
+            if customers.count() >= len(cache['drinks']):
+                return render(request, 'multivers/index.html', {'discount': Settings.objects.get(key=DISCOUNT)})
             else:
-                return render(request, 'multivers/db.html', {'dbs': tools.get_administrations()})
+                for x in cache['drinks'].keys():
+                    if not Customer.objects.filter(alexia_name=x).exists():
+                        new_customer = Customer()
+                        new_customer.alexia_name = x
+                        new_customer.save()
+                        return redirect(new_customer)
+                raise Exception('State impossible')
+        else:
+            return redirect(reverse('multivers:upload'))
 
 
 class SendToMultivers(LoginRequiredMixin, View):
@@ -87,7 +81,7 @@ class SendToMultivers(LoginRequiredMixin, View):
             return result
         else:
             result = []
-            for costumer_name, drinks in data_cache[request.user]['drinks'].items():
+            for customer_name, drinks in data_cache[request.user]['drinks'].items():
                 order_lines = []
                 for drink in drinks:
                     locations = Location.objects.filter(name__in=drink['location'])
@@ -97,22 +91,22 @@ class SendToMultivers(LoginRequiredMixin, View):
                         make_orderline(product_id, amount, drink['drink_name'], drink['date'], discount)
                         for product_id, amount in drink['products'].items()
                     )
-                order = make_order(costumer_name, order_lines)
+                order = make_order(customer_name, order_lines)
                 sr, response = tools.send_to_multivers(order)
                 if not sr:
                     return HttpResponse('Error {} {}<br>\n<br>\n{}'.format(response.status_code, response.content, json.dumps(order)))
                 else:
                     json_response = json.loads(response.content.decode('UTF-8'))
-                    result.append((costumer_name, json_response['orderId'], json_response['totalOrderAmount']))
+                    result.append((customer_name, json_response['orderId'], json_response['totalOrderAmount']))
             return render(request, 'multivers/send.html', {'result': result})
 
 
 class SaveCode(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
         if 'code' in kwargs and kwargs['code']:
-            tools.save_setting(key='auth_code', value=unquote(kwargs['code']))
+            Settings.set('auth_code', unquote(kwargs['code']))
         elif 'code' in request.GET and request.GET['code']:
-            tools.save_setting(key='auth_code', value=request.GET['code'])
+            Settings.set('auth_code', request.GET['code'])
         return super(SaveCode, self).dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, *args, **kwargs):
@@ -123,20 +117,6 @@ class SelectDB(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
         tools.save_setting('db', kwargs['name'])
         return super(SelectDB, self).dispatch(request, *args, **kwargs)
-
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse('multivers:index')
-
-
-class ClearCache(LoginRequiredMixin, RedirectView):
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            del data_cache[request.user]
-        except NameError:
-            pass
-        except KeyError:
-            pass
-        return super(ClearCache, self).dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, *args, **kwargs):
         return reverse('multivers:index')
@@ -153,9 +133,10 @@ class UploadJsonData(LoginRequiredMixin, FormView):
 
 
 class CostumerUpdate(LoginRequiredMixin, UpdateView):
-    model = Costumer
+    model = Customer
     success_url = reverse_lazy('multivers:index')
     fields = '__all__'
+
 
 class LocationUpdate(LoginRequiredMixin, UpdateView):
     model = Location
