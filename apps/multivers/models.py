@@ -115,7 +115,16 @@ class ConceptOrder(models.Model):
     def reference(self):
         MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober",
                   "november", "december"]
-        return "Borrels {}".format(MONTHS[self.date.month - 1])
+        first = self.conceptorderdrink_set.first()
+        last = self.conceptorderdrink_set.last()
+
+        first_month = MONTHS[first.date.month - 1]
+        last_month = MONTHS[last.date.month - 1]
+
+        if first_month == last_month:
+            return "Borrels {}".format(first_month)
+        else:
+            return "Borrels {} - {}".format(first_month, last_month)
 
     def as_multivers(self, revenue_account=None):
         from apps.multivers.tools import MultiversOrder
