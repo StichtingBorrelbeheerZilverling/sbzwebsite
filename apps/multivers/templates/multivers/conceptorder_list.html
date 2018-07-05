@@ -2,7 +2,7 @@
 {% load i18n bootstrap_form %}
 
 {% block content %}
-    {% if new_products or new_customers %}
+    {% if new_products or new_customers or new_locations %}
     <h1>{% trans 'Unresolved issues' %}</h1>
     <p>
         {% trans 'Please resolve the following issues before sending any pending orders:' %}
@@ -24,6 +24,14 @@
             {% endblocktrans %}
         </li>
     {% endfor %}
+    {% for location in new_locations %}
+        <li>
+            {% url 'multivers:location_update' location.pk as location_url %}
+            {% blocktrans %}
+                Please update the discount type of the new location "<a href="{{ location_url }}">{{ location }}</a>".
+            {% endblocktrans %}
+        </li>
+    {% endfor %}
     </ul>
     {% endif %}
 
@@ -32,7 +40,7 @@
     </h1>
 
     <p>
-        {% if conceptorder_list and not new_products and not new_customers%}
+        {% if conceptorder_list and not new_products and not new_customers and not new_locations %}
             <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#form-send">
                 Send All
             </button>

@@ -28,8 +28,10 @@ class Index(LoginRequiredMixin, ListView):
 
         context['send_form'] = SendOrdersForm()
         context['create_order_form'] = FileForm()
+
         context['new_products'] = Product.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
         context['new_customers'] = Customer.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
+        context['new_locations'] = Location.objects.filter(no_discount__isnull=True)
 
         return context
 
@@ -197,6 +199,19 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
             product.alexia_name = product_name
             product.save()
+
+        alexia_locations = set()
+
+        for drinks in data['drinks'].values():
+            for drink in drinks:
+                for location in drink['location']:
+                    alexia_locations.add(location)
+
+        for alexia_location in alexia_locations:
+            if not Location.objects.filter(name=alexia_location).exists():
+                location = Location()
+                location.name = alexia_location
+                location.save()
 
     def form_valid(self, form):
         data = form.cleaned_json
