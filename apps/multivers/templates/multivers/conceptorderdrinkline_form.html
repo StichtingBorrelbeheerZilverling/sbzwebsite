@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <form method="POST" action="">
+        {% csrf_token %}
+        {{ form|bootstrap_form }}
+        <a href="{% url 'multivers:order_view' drink.order.pk %}" class="btn btn-secondary">Back</a>
+        <input type="submit" class="btn btn-primary" value="Save">
+    </form>
+{% endblock %}

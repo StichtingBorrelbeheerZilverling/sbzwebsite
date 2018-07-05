@@ -49,7 +49,7 @@ class Product(models.Model):
     margin = models.IntegerField(choices=MARGIN, default=HAS_MARGIN)
 
     def get_absolute_url(self):
-        return reverse('multivers:product_update', args=(self.pk,))
+        return reverse('multivers:product_edit', args=(self.pk,))
 
     def __str__(self):
         return self.alexia_name
@@ -74,6 +74,9 @@ class Customer(models.Model):
     def __str__(self):
         return self.alexia_name
 
+    class Meta:
+        ordering = ['multivers_id']
+
 
 class Location(models.Model):
     NO_DISCOUNT = 0
@@ -91,10 +94,47 @@ class Location(models.Model):
     def get_absolute_url(self):
         return reverse('multivers:location_update', args=(self.pk,))
 
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
 
 class ConceptOrder(models.Model):
     date = models.DateField()
     customer = models.ForeignKey("multivers.Customer")
+
+    def __str__(self):
+        return "Concept Order for {} ({})".format(
+            str(self.customer),
+            self.date.strftime("%d-%m-%Y")
+        )
+
+    @property
+    def reference(self):
+        MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober",
+                  "november", "december"]
+        return "Borrels {}".format(MONTHS[self.date.month - 1])
+
+    def as_multivers(self, revenue_account=None):
+        from apps.multivers.tools import MultiversOrder
+        result = MultiversOrder(date=self.date,
+                                reference=self.reference,
+                                payment_condition_id=Settings.get('payment_condition'),
+                                customer_id=self.customer.multivers_id,
+                                customer_vat_type=self.customer.vat_type,
+                                processor_id=Settings.get('processor_id'),
+                                processor_name=Settings.get('processor_name'))
+
+        for drink in self.conceptorderdrink_set.all():
+            for line in drink.as_multivers(revenue_account=revenue_account):
+                result.add_line(line)
+
+        return result
+
+    class Meta:
+        ordering = ['date', 'customer']
 
 
 class ConceptOrderDrink(models.Model):
@@ -103,8 +143,40 @@ class ConceptOrderDrink(models.Model):
     name = models.CharField(max_length=255)
     locations = models.ManyToManyField("multivers.Location")
 
+    def __str__(self):
+        return self.name
+
+    def as_multivers(self, revenue_account=None):
+        from apps.multivers.tools import MultiversOrderLine
+        order_lines = []
+
+        discount_amount = float(Settings.get('discount')) / 100.0
+        discount_location = self.locations.filter(no_discount=Location.ALWAYS_DISCOUNT).exists() or \
+                            not self.locations.filter(no_discount=Location.NO_DISCOUNT)
+
+        for line in self.conceptorderdrinkline_set.all():
+            discount = discount_location and line.product.margin == Product.HAS_MARGIN
+
+            order_lines.append(MultiversOrderLine(date=self.date,
+                                                  description="{} - {}".format(self.name, line.product.multivers_name),
+                                                  discount=discount_amount if discount else 0.0,
+                                                  product_id=line.product.multivers_id,
+                                                  quantity=line.amount,
+                                                  revenue_account=revenue_account if revenue_account else None))
+
+        return order_lines
+
+    class Meta:
+        ordering = ['date', 'name']
+
 
 class ConceptOrderDrinkLine(models.Model):
     drink = models.ForeignKey("multivers.ConceptOrderDrink")
     product = models.ForeignKey("multivers.Product")
     amount = models.FloatField()
+
+    def __str__(self):
+        return "{} for {}".format(str(self.product), str(self.drink))
+
+    class Meta:
+        ordering = ['product']

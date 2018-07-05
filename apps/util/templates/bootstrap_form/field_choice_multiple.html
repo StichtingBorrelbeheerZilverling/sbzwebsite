@@ -1,0 +1,27 @@
+{% load bootstrap_form %}
+
+{% if field.field.choices|length > 7 %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field.errors|bootstrap_form_errors }}
+
+        <select name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" multiple>
+            {% for widget in field.subwidgets %}
+                <option value="{{ widget.data.value }}"
+                        {% if widget.data.selected %}selected{% endif %}>{{ widget.choice_label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+{% else %}
+    <div class="form-group">
+        <label>{{ field.label }}</label>
+        {{ field.errors|bootstrap_form_errors }}
+        {% for widget in field.subwidgets %}
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="{{ field.name }}" id="{{ field.id_for_label }}-{{ widget.data.value }}"
+                       value="{{ widget.data.value }}" {% if widget.data.selected %}checked{% endif %}>
+                <label for="{{ field.id_for_label }}-{{ widget.data.value }}">{{ widget.choice_label }}</label>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

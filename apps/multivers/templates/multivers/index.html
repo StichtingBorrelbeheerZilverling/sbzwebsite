@@ -1,7 +1,0 @@
-{% extends 'base.html' %}
-{% block content %}
-    <a href="{% url 'multivers:settings_update' discount.pk %}">Discount is currently: {{ discount.value }}</a>
-    <a href="{% url 'admin:app_list' 'multivers' %}">Settings</a><br>
-    <a href="{% url 'multivers:clear_cache' %}">Upload new file</a><br>
-    <a href="{% url 'multivers:send' %}">Send to Multivers</a>
-{% endblock %}

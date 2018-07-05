@@ -1,76 +1,37 @@
 import json
-
 from datetime import datetime
-import re
 from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, Http404
-from django.shortcuts import render, redirect
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.urls import reverse_lazy
-from django.views.generic import FormView, ListView, DeleteView
+from django.views.generic import FormView, ListView, DeleteView, CreateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView, View
+from django.views.generic.detail import DetailView
 
 from apps.multivers.defaults import make_orderline, make_order
-from apps.multivers.forms import FileForm, ProductForm
+from apps.multivers.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
 from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
 from . import tools
 from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
-DISCOUNT = 'discount'
 
-data_cache = {}
+class Index(LoginRequiredMixin, ListView):
+    queryset = ConceptOrder.objects.all().prefetch_related('conceptorderdrink_set')
 
-# Settings to check: DISCOUNT, db,
+    def get_context_data(self, **kwargs):
+        context = super(Index, self).get_context_data(**kwargs)
 
+        context['send_form'] = SendOrdersForm()
+        context['create_order_form'] = FileForm()
+        context['new_products'] = Product.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
+        context['new_customers'] = Customer.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
 
-class Index(LoginRequiredMixin, View):
-    def get(self, request):
-        multivers, do_redirect = Multivers.instantiate_or_redirect(request)
-
-        if do_redirect:
-            return do_redirect
-
-        if request.user in data_cache:
-            cache = data_cache[request.user]
-            for alexia_id, alexia_name in cache['products'].items():
-                product = Product.objects.filter(alexia_id=alexia_id)
-                if product.exists():
-                    first = product.first()
-                    if first.alexia_name != alexia_name:
-                        first.alexia_name = alexia_name
-                        first.save()
-                else:
-                    new_product = Product()
-                    new_product.alexia_id = alexia_id
-                    new_product.alexia_name = alexia_name
-                    new_product.save()
-                    return redirect(new_product)
-
-            location = set(l for x in [d['location'] for a in cache['drinks'].values() for d in a] for l in x)
-            db_location = [x[0] for x in Location.objects.all().values_list('name')]
-            for l in location:
-                if l not in db_location:
-                    new_location = Location()
-                    new_location.name = l
-                    new_location.save()
-                    return redirect(new_location)
-
-            customers = Customer.objects.filter(alexia_name__in=cache['drinks'].keys())
-            if customers.count() >= len(cache['drinks']):
-                return render(request, 'multivers/index.html', {'discount': Settings.objects.get(key=DISCOUNT)})
-            else:
-                for x in cache['drinks'].keys():
-                    if not Customer.objects.filter(alexia_name=x).exists():
-                        new_customer = Customer()
-                        new_customer.alexia_name = x
-                        new_customer.save()
-                        return redirect(new_customer)
-                raise Exception('State impossible')
-        else:
-            return redirect(reverse('multivers:upload'))
+        return context
 
 
 class SendToMultivers(LoginRequiredMixin, View):
@@ -112,16 +73,115 @@ class SaveCode(LoginRequiredMixin, RedirectView):
         return reverse('multivers:index')
 
 
-class SelectDB(LoginRequiredMixin, RedirectView):
+class ConceptOrderView(LoginRequiredMixin, DetailView):
+    queryset = ConceptOrder.objects.all().prefetch_related('conceptorderdrink_set',
+                                                           'conceptorderdrink_set__locations',
+                                                           'conceptorderdrink_set__conceptorderdrinkline_set',
+                                                           'conceptorderdrink_set__conceptorderdrinkline_set__product')
+
+    def get_context_data(self, **kwargs):
+        context = super(ConceptOrderView, self).get_context_data(**kwargs)
+
+        context['drink_create_form'] = ConceptOrderDrinkForm()
+
+        for drink in context['object'].conceptorderdrink_set.all():
+            drink.edit_form = ConceptOrderDrinkForm(instance=drink)
+            drink.line_create_form = ConceptOrderDrinkLineForm()
+            drink.line_create_form.html_id = "ConceptOrderDrinkLine-" + str(drink.pk)
+
+            for line in drink.conceptorderdrinkline_set.all():
+                line.edit_form = ConceptOrderDrinkLineForm(instance=line)
+
+        return context
+
+
+class ConceptOrderDrinkCreateView(LoginRequiredMixin, CreateView):
+    model = ConceptOrderDrink
+    form_class = ConceptOrderDrinkForm
+    
     def dispatch(self, request, *args, **kwargs):
-        tools.save_setting('db', kwargs['name'])
-        return super(SelectDB, self).dispatch(request, *args, **kwargs)
+        self.order = get_object_or_404(ConceptOrder, pk=self.kwargs['pk'])
+        return super(ConceptOrderDrinkCreateView, self).dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        ctx = super(ConceptOrderDrinkCreateView, self).get_context_data(**kwargs)
+        ctx['order'] = self.order
+        return ctx
 
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse('multivers:index')
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.order = self.order
+        self.object.save()
+        return super(ConceptOrderDrinkCreateView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
 
 
-class UploadJsonData(LoginRequiredMixin, FormView):
+class ConceptOrderDrinkEditView(LoginRequiredMixin, UpdateView):
+    model = ConceptOrderDrink
+    form_class = ConceptOrderDrinkForm
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ConceptOrderDrinkEditView, self).get_context_data(**kwargs)
+        ctx['order'] = self.object.order
+        return ctx
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
+
+
+class ConceptOrderDrinkDeleteView(LoginRequiredMixin, DeleteView):
+    model = ConceptOrderDrink
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
+
+
+class ConceptOrderDrinkLineCreateView(LoginRequiredMixin, CreateView):
+    model = ConceptOrderDrinkLine
+    form_class = ConceptOrderDrinkLineForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.drink = get_object_or_404(ConceptOrderDrink, pk=self.kwargs['pk'])
+        return super(ConceptOrderDrinkLineCreateView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ConceptOrderDrinkLineCreateView, self).get_context_data(**kwargs)
+        ctx['drink'] = self.drink
+        return ctx
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.drink = self.drink
+        self.object.save()
+        return super(ConceptOrderDrinkLineCreateView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+
+
+class ConceptOrderDrinkLineEditView(LoginRequiredMixin, UpdateView):
+    model = ConceptOrderDrinkLine
+    form_class = ConceptOrderDrinkLineForm
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ConceptOrderDrinkLineEditView, self).get_context_data(**kwargs)
+        ctx['drink'] = self.object.drink
+        return ctx
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+
+
+class ConceptOrderDrinkLineDeleteView(LoginRequiredMixin, DeleteView):
+    model = ConceptOrderDrinkLine
+
+    def get_success_url(self):
+        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+
+
+class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     form_class = FileForm
     template_name = 'multivers/file_upload.html'
     success_url = reverse_lazy('multivers:index')
@@ -166,10 +226,33 @@ class UploadJsonData(LoginRequiredMixin, FormView):
                     order_drink_line.amount = quantity
                     order_drink_line.save()
 
-        return super(UploadJsonData, self).form_valid(form)
+        return super(OrdersCreateFromFile, self).form_valid(form)
 
 
-class CostumerUpdate(LoginRequiredMixin, UpdateView):
+class OrdersSendAllView(LoginRequiredMixin, FormView):
+    form_class = SendOrdersForm
+
+    def form_valid(self, form):
+        multivers, do_redirect = Multivers.instantiate_or_redirect(self.request)
+        if do_redirect: return do_redirect
+
+        admin = Settings.get('db')
+
+        orders = ConceptOrder.objects.all()
+
+        for order in orders:
+            multivers_order = order.as_multivers(revenue_account=form.cleaned_data['override_revenue_account'])
+            multivers.create_order(administration=admin, order=multivers_order)
+
+        return redirect('multivers:index')
+
+
+class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
+    model = ConceptOrder
+    success_url = reverse_lazy('multivers:index')
+
+
+class CustomerUpdate(LoginRequiredMixin, UpdateView):
     model = Customer
     success_url = reverse_lazy('multivers:index')
     fields = '__all__'

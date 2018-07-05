@@ -1,6 +1,6 @@
 {% load bootstrap_form %}
 
-{% if field.field.choices|length > 5 %}
+{% if field.field.choices|length > 7 %}
     <div class="form-group">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field.errors|bootstrap_form_errors }}

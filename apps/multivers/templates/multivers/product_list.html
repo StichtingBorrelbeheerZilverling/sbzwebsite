@@ -27,11 +27,11 @@
                 </td>
                 <td>
                     <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
-                            data-target="#edit-{{ product.pk }}">
+                            data-target="#edit-Product-{{ product.pk }}">
                         <span class="oi oi-pencil"></span>
                     </button>
                     <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#delete-{{ product.pk }}">
+                            data-target="#delete-Product-{{ product.pk }}">
                         <span class="oi oi-trash"></span>
                     </button>
                 </td>
@@ -43,54 +43,7 @@
 
 {% block modals %}
     {% for product in product_list %}
-        <form method="POST" action="{% url 'multivers:product_update' product.pk %}">
-            {% csrf_token %}
-            <div class="modal fade" id="edit-{{ product.pk }}" tabindex="-1" role="dialog"
-                 aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Edit {{ product }}</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            {{ product.edit_form|bootstrap_form }}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
-                            <input type="submit" class="btn btn-primary" value="{% trans 'Save' %}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        <form method="POST" action="{% url 'multivers:product_delete' product.pk %}">
-            {% csrf_token %}
-            <div class="modal fade" id="delete-{{ product.pk }}" tabindex="-1" role="dialog"
-                 aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Delete {{ product }}</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            {% blocktrans %}
-                                Are you sure you want to delete the product "{{ product }}"?
-                            {% endblocktrans %}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
-                            <input type="submit" class="btn btn-danger" value="{% trans 'Delete' %}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
+        {% bootstrap_edit_modal product product.edit_form 'multivers:product_edit' product.pk %}
+        {% bootstrap_delete_modal product 'multivers:product_delete' product.pk %}
     {% endfor %}
 {% endblock %}

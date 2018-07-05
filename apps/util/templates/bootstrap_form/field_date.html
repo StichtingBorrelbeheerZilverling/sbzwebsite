@@ -2,5 +2,5 @@
 <div class="form-group">
     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
     {{ field.errors|bootstrap_form_errors }}
-    <input type="text" class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.initial|default:"" }}">
+    <input type="date" class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}" value="{{ field.initial|date:"Y-m-d"|default:"" }}">
 </div>

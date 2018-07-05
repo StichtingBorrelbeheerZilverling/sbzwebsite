@@ -193,9 +193,9 @@ class Multivers:
     def _auth(self):
         now = datetime.utcnow()
 
-        if self.access_token and self.access_token_expiry <= now:
+        if self.access_token and self.access_token_expiry > now:
             pass
-        elif self.access_token and self.access_token_expiry > now:
+        elif self.access_token and self.access_token_expiry <= now:
             self._request_token("refresh_token", self.refresh_token, "refresh_token")
         elif self.auth_code:
             self._request_token("code", self.auth_code, "authorization_code")

@@ -1,7 +1,12 @@
 {% load bootstrap_form %}
 
+{% for field in form.hidden_fields %}
+    {{ field.errors|bootstrap_form_errors }}
+    {{ field }}
+{% endfor %}
+
 {{ form.non_field_errors|bootstrap_form_errors }}
 
-{% for field in form %}
+{% for field in form.visible_fields %}
     {{ field|bootstrap_form_field }}
 {% endfor %}

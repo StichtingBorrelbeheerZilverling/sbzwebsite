@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <h1>
+        {{ object }}
+        <button data-toggle="modal" data-target="#create-ConceptOrderDrink" class="btn btn-secondary btn-sm">
+            + Add Drink
+        </button>
+    </h1>
+    {% for drink in object.conceptorderdrink_set.all %}
+        <h2>
+            {{ drink }}
+            <button data-toggle="modal" data-target="#edit-ConceptOrderDrink-{{ drink.pk }}"
+                    class="btn btn-secondary btn-sm">
+                <span class="oi oi-pencil"></span>
+            </button>
+            <button data-toggle="modal" data-target="#delete-ConceptOrderDrink-{{ drink.pk }}"
+                    class="btn btn-secondary btn-sm">
+                <span class="oi oi-trash"></span>
+            </button>
+        </h2>
+        <p>
+            <strong>Location</strong>: {{ drink.locations.all|join:", " }}
+        </p>
+        <p>
+            <strong>Date</strong>: {{ drink.date|date:"d-m-Y" }}
+        </p>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>
+                    Product
+                </th>
+                <th>Quantity</th>
+                <th><!-- Buttons --></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for line in drink.conceptorderdrinkline_set.all %}
+                <tr>
+                    <td>{{ line.product }}</td>
+                    <td>{{ line.amount }}</td>
+                    <td>
+                        <button data-toggle="modal" data-target="#edit-ConceptOrderDrinkLine-{{ line.pk }}"
+                                class="btn btn-secondary btn-sm">
+                            <span class="oi oi-pencil"></span>
+                        </button>
+                        <button data-toggle="modal" data-target="#delete-ConceptOrderDrinkLine-{{ line.pk }}"
+                                class="btn btn-secondary btn-sm">
+                            <span class="oi oi-trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3">
+                    <button data-toggle="modal" data-target="#create-ConceptOrderDrinkLine-{{ drink.pk }}"
+                            class="btn btn-secondary btn-sm">
+                        + Add line
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    {% endfor %}
+{% endblock %}
+
+{% block modals %}
+    {% bootstrap_create_modal drink_create_form 'multivers:order_drink_create' object.pk %}
+
+    {% for drink in object.conceptorderdrink_set.all %}
+        {% bootstrap_edit_modal drink drink.edit_form 'multivers:order_drink_edit' drink.pk %}
+        {% bootstrap_delete_modal drink 'multivers:order_drink_delete' drink.pk %}
+
+        {% bootstrap_create_modal drink.line_create_form 'multivers:order_drink_line_create' drink.pk %}
+
+        {% for line in drink.conceptorderdrinkline_set.all %}
+            {% bootstrap_edit_modal line line.edit_form 'multivers:order_drink_line_edit' line.pk %}
+            {% bootstrap_delete_modal line 'multivers:order_drink_line_delete' line.pk %}
+        {% endfor %}
+    {% endfor %}
+{% endblock %}

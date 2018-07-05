@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    {% if new_products or new_customers %}
+    <h1>{% trans 'Unresolved issues' %}</h1>
+    <p>
+        {% trans 'Please resolve the following issues before sending any pending orders:' %}
+    </p>
+    <ul>
+    {% for product in new_products %}
+        <li>
+            {% url 'multivers:product_edit' product.pk as product_url %}
+            {% blocktrans %}
+                Please map the new product "<a href="{{ product_url }}">{{ product }}</a>" to a multivers ID and name.
+            {% endblocktrans %}
+        </li>
+    {% endfor %}
+    {% for customer in new_customers %}
+        <li>
+            {% url 'multivers:customer_edit' customer.pk as customer_url %}
+            {% blocktrans %}
+                Please map the new customer "<a href="{{ customer_url }}">{{ customer }}</a>" to a multivers ID.
+            {% endblocktrans %}
+        </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h1>
+        {% trans 'Pending concept orders' %}
+    </h1>
+
+    <p>
+        {% if conceptorder_list and not new_products and not new_customers%}
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#form-send">
+                Send All
+            </button>
+        {% endif %}
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#create-ConceptOrder">
+            + From File
+        </button>
+    </p>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Drink count</th>
+            <th><!-- Buttons --></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for order in conceptorder_list %}
+            <tr>
+                <td>{{ order.date|date:"d-m-Y" }}</td>
+                <td>{{ order.customer }}</td>
+                <td>{{ order.conceptorderdrink_set.all|length }}</td>
+                <td>
+                    <a href="{% url 'multivers:order_view' order.pk %}" class="btn btn-secondary btn-sm">View</a>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#delete-ConceptOrder-{{ order.pk }}">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td><emph>There are no pending concept orders right now.</emph></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block modals %}
+    {% for order in conceptorder_list %}
+        {% bootstrap_delete_modal order 'multivers:order_delete' order.pk %}
+    {% endfor %}
+
+    {% bootstrap_create_modal create_order_form 'multivers:orders_create_from_file' %}
+
+    {% bootstrap_form_modal "send" "Send all pending invoices" send_form "multivers:orders_send_all" %}
+{% endblock %}

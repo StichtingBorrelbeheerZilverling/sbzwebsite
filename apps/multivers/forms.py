@@ -1,10 +1,14 @@
 import json
 from datetime import datetime
 
-from django.forms import forms, ModelForm
+from django.core.cache import cache
+from django.forms import forms, ModelForm, ChoiceField, HiddenInput, MultipleChoiceField, ModelMultipleChoiceField, \
+    Form, CharField
+from django.utils.functional import cached_property
 
 from apps.multivers import tools
-from apps.multivers.models import Product
+from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
+from apps.util.forms import CachingModelMultipleChoiceField
 
 
 class FileForm(forms.Form):
@@ -98,8 +102,31 @@ class FileForm(forms.Form):
 
         return cleaned_data
 
+    class Meta:
+        model = ConceptOrder
+
 
 class ProductForm(ModelForm):
     class Meta:
         model = Product
         fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'margin']
+
+
+class ConceptOrderDrinkForm(ModelForm):
+    locations = CachingModelMultipleChoiceField(queryset=Location.objects)
+
+    class Meta:
+        model = ConceptOrderDrink
+        fields = ['name', 'date', 'locations']
+
+
+class ConceptOrderDrinkLineForm(ModelForm):
+    product = CachingModelMultipleChoiceField(queryset=Product.objects)
+
+    class Meta:
+        model = ConceptOrderDrinkLine
+        fields = ['product', 'amount']
+
+
+class SendOrdersForm(Form):
+    override_revenue_account = CharField(max_length=255, required=False)
