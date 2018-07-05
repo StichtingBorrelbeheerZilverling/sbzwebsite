@@ -55,7 +55,7 @@ class Product(models.Model):
         return self.alexia_name
 
     class Meta:
-        ordering = ('alexia_name',)
+        ordering = ('multivers_id',)
 
 
 class Customer(models.Model):
