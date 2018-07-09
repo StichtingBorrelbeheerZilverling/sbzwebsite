@@ -21,7 +21,7 @@ def _bootstrap_form_field_template(field):
         return "bootstrap_form/field_text.html"
     elif isinstance(field.field, (fields.MultipleChoiceField, ModelMultipleChoiceField)):
         return "bootstrap_form/field_choice_multiple.html"
-    elif isinstance(field.field, (fields.TypedChoiceField, ModelChoiceField,)):
+    elif isinstance(field.field, (fields.TypedChoiceField, ModelChoiceField, fields.ChoiceField)):
         return "bootstrap_form/field_choice.html"
     elif isinstance(field.field, fields.FileField):
         return "bootstrap_form/field_file.html"

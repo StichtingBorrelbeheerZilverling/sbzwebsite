@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Price changes</h1>
+    <ul>
+        {% for change in unresolvedpricechange_list %}
+            <li>
+                <a href="{{ change.get_absolute_url }}">{{ change }}</a>
+            </li>
+        {% empty %}
+            <li><em>There are no price changes pending.</em></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

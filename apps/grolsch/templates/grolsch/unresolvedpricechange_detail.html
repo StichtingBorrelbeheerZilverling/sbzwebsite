@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <h1>Price change of {{ object.product }}</h1>
+    <ul>
+        <li>Old price: {{ object.product.last_price_str|default:"–" }}</li>
+        <li>Old discount price: {{ object.proudct.last_discount_price_str|default:"–" }}</li>
+        <li>New price: {{ object.new_price_str|default:"–" }}</li>
+    </ul>
+
+    <form method="POST" action="{% url 'grolsch:price_change_resolve' object.pk %}">
+        {% csrf_token %}
+        {{ form|bootstrap_form }}
+        <input type="submit" class="btn btn-primary" value="Resolve">
+    </form>
+{% endblock %}
