@@ -36,33 +36,6 @@ class Index(LoginRequiredMixin, ListView):
         return context
 
 
-class SendToMultivers(LoginRequiredMixin, View):
-    def get(self, request):
-        result = tools.oauth(request)
-        if result:
-            return result
-        else:
-            result = []
-            for customer_name, drinks in data_cache[request.user]['drinks'].items():
-                order_lines = []
-                for drink in drinks:
-                    locations = Location.objects.filter(name__in=drink['location'])
-                    discount = locations.filter(no_discount=Location.ALWAYS_DISCOUNT).exists() or not locations.filter(no_discount=Location.NO_DISCOUNT).exists()
-
-                    order_lines.extend(
-                        make_orderline(product_id, amount, drink['drink_name'], drink['date'], discount)
-                        for product_id, amount in drink['products'].items()
-                    )
-                order = make_order(customer_name, order_lines)
-                sr, response = tools.send_to_multivers(order)
-                if not sr:
-                    return HttpResponse('Error {} {}<br>\n<br>\n{}'.format(response.status_code, response.content, json.dumps(order)))
-                else:
-                    json_response = json.loads(response.content.decode('UTF-8'))
-                    result.append((customer_name, json_response['orderId'], json_response['totalOrderAmount']))
-            return render(request, 'multivers/send.html', {'result': result})
-
-
 class SaveCode(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
         if 'code' in kwargs and kwargs['code']:
