@@ -27,6 +27,8 @@ def _bootstrap_form_field_template(field):
         return "bootstrap_form/field_file.html"
     elif isinstance(field.field, fields.DateField):
         return "bootstrap_form/field_date.html"
+    elif isinstance(field.field, fields.BooleanField):
+        return "bootstrap_form/field_bool.html"
     else:
         return "bootstrap_form/field_default.html"
 

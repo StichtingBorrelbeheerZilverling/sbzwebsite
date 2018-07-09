@@ -1,0 +1,13 @@
+<p>This email is intended to notify you that the price of the following product has changed:</p>
+
+<b>{{ change.product }}</b>
+
+<ul>
+    <li>Old price: {{ change.product.last_price_str|default:"–" }}</li>
+    <li>Old discount: {{ change.product.last_discount_price_str|default:"–" }}</li>
+    <li>New price: {{ change.new_price_str }}</li>
+</ul>
+
+<p>
+    Please mark this price as a temporary discount or a new price by clicking <a href="{{ full_url }}">here</a>.
+</p>

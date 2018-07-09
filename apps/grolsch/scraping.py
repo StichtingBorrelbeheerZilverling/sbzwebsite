@@ -55,10 +55,3 @@ class DeKlok:
         })
 
         return response.json()
-
-
-if __name__ == "__main__":
-    django.setup()
-    from apps.grolsch.models import *
-    product = Product.create_from_url("https://www.deklokdranken.nl/grolsch-pils-fust-50l.html", track_price=True)
-    print(product.last_price)

@@ -1,0 +1,13 @@
+{% autoescape off %}
+This email is intended to notify you that the price of the following product has changed:
+
+{{ change.product }}
+
+ - Old price: {{ change.product.last_price_str|default:"–" }}
+ - Old discount: {{ change.product.last_discount_price_str|default:"–" }}
+ - New price: {{ change.new_price_str }}
+
+Please mark this price as a temporary discount or a new price by clicking on this link:
+
+{{ full_url }}
+{% endautoescape %}

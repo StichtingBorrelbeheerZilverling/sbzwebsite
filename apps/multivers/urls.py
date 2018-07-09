@@ -5,7 +5,6 @@ from . import views
 urlpatterns = [
     url(r'^$', view=views.Index.as_view(), name='index'),
     url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveCode.as_view(), name='code'),
-    url(r'^send/$', view=views.SendToMultivers.as_view(), name='send'),
 
     url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_update'),
     url(r'^location/(?P<pk>[0-9]+)/edit$', view=views.LocationUpdate.as_view(), name='location_update'),

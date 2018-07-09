@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <h1>Create product</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form|bootstrap_form }}
+        <a href="{% url 'grolsch:products' %}" class="btn btn-secondary">{% trans 'Back' %}</a>
+        <input type="submit" class="btn btn-primary" value="{% trans 'Create' %}">
+    </form>
+{% endblock %}

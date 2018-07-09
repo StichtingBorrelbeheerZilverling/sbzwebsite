@@ -55,6 +55,17 @@
                             </li>
                         </ul>
                     </li>
+                    <li class="dropdown {% if active_id == "grolsch" %}active{% endif %}">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+                            {% trans 'Grolsch' %}
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url 'grolsch:products' %}" class="dropdown-item">{% trans 'Products' %}</a>
+                            </li>
+                        </ul>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">

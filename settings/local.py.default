@@ -37,3 +37,8 @@ SERVER_EMAIL = EMAIL_FROM
 
 mv_client_id = ''
 mv_client_secret = ''
+
+DE_KLOK_EMAIL = ""
+DE_KLOK_PASSWORD = ""
+
+FULL_URL_PREFIX = "https://www.sbz.utwente.nl"

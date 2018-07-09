@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <h1>
+        Products
+        <button role="button" data-toggle="modal" data-target="#form-Product" class="btn btn-secondary btn-sm">
+            {% trans '+ Create from URL' %}
+        </button>
+    </h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th colspan="2">Grolsch name</th>
+                <th>Price tracked?</th>
+                <th>Last price</th>
+                <th>Current discount price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in product_list %}
+                <tr>
+                    <td>{{ product.grolsch_article_no }}</td>
+                    <td>{{ product.grolsch_name }}</td>
+                    <td>{{ product.price_track_id|yesno:"Yes,No"  }}</td>
+                    <td>{{ product.last_price_str|default:"–" }}</td>
+                    <td>{{ product.last_discount_price_str|default:"–" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <em>There are no products yet!</em>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block modals %}
+    {% bootstrap_form_modal "Product" "Create product from URL" create_form 'grolsch:product_create' %}
+{% endblock %}
