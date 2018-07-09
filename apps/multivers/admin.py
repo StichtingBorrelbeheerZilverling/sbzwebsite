@@ -21,3 +21,7 @@ class CustomerAdmin(admin.ModelAdmin):
 admin.site.register(models.Settings, SettingsAdmin)
 admin.site.register(models.Product, ProductAdmin)
 admin.site.register(models.Customer, CustomerAdmin)
+
+admin.site.register(models.ConceptOrder)
+admin.site.register(models.ConceptOrderDrink)
+admin.site.register(models.ConceptOrderDrinkLine)
