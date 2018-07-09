@@ -13,9 +13,9 @@ class Product(models.Model):
     grolsch_article_no = models.CharField(max_length=255, blank=False, null=False)
     grolsch_name = models.CharField(max_length=255, blank=False, null=False)
 
-    price_track_id = models.CharField(max_length=255, blank=False, null=True)
-    last_price = models.PositiveIntegerField(null=True)
-    last_discount_price = models.PositiveIntegerField(null=True)
+    price_track_id = models.CharField(max_length=255, blank=True, null=True)
+    last_price = models.PositiveIntegerField(null=True, blank=True)
+    last_discount_price = models.PositiveIntegerField(null=True, blank=True)
 
     @property
     def last_price_str(self):
