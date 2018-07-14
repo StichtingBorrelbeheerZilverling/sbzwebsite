@@ -16,6 +16,7 @@ from django.views.generic.detail import DetailView
 from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
 from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
+from apps.util.profiling import profile
 from . import tools
 from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -53,6 +54,10 @@ class ConceptOrderView(LoginRequiredMixin, DetailView):
                                                            'conceptorderdrink_set__locations',
                                                            'conceptorderdrink_set__conceptorderdrinkline_set',
                                                            'conceptorderdrink_set__conceptorderdrinkline_set__product')
+
+    @profile
+    def dispatch(self, request, *args, **kwargs):
+        return super(ConceptOrderView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(ConceptOrderView, self).get_context_data(**kwargs)

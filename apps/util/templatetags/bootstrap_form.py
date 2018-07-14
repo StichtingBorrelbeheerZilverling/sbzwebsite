@@ -1,5 +1,5 @@
 from django import template
-from django.forms import fields, ModelMultipleChoiceField, ModelChoiceField, BoundField
+from django.forms import fields, ModelMultipleChoiceField, ModelChoiceField, BoundField, widgets
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -13,19 +13,21 @@ def bootstrap_form(form):
 
 
 def _bootstrap_form_field_template(field):
-    if isinstance(field.field, fields.IntegerField):
+    widget = field.field.widget
+
+    if isinstance(widget, widgets.NumberInput):
         # Cast floats to string with dot decimal point
         field.initial_string = str(field.initial or "")
         return "bootstrap_form/field_number.html"
-    elif isinstance(field.field, fields.CharField):
+    elif isinstance(widget, widgets.TextInput):
         return "bootstrap_form/field_text.html"
-    elif isinstance(field.field, (fields.MultipleChoiceField, ModelMultipleChoiceField)):
+    elif isinstance(widget, widgets.SelectMultiple):
         return "bootstrap_form/field_choice_multiple.html"
-    elif isinstance(field.field, (fields.TypedChoiceField, ModelChoiceField, fields.ChoiceField)):
+    elif isinstance(widget, widgets.Select):
         return "bootstrap_form/field_choice.html"
-    elif isinstance(field.field, fields.FileField):
+    elif isinstance(widget, widgets.FileInput):
         return "bootstrap_form/field_file.html"
-    elif isinstance(field.field, fields.DateField):
+    elif isinstance(widget, widgets.DateInput):
         return "bootstrap_form/field_date.html"
     elif isinstance(field.field, fields.BooleanField):
         return "bootstrap_form/field_bool.html"

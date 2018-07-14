@@ -3,8 +3,10 @@ import time
 import traceback
 from collections import OrderedDict
 from datetime import datetime, timedelta
+from json import JSONDecodeError
 from urllib import parse
 
+import django
 import requests
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -147,7 +149,6 @@ class Multivers:
         if acquired and expires_in:
             self.access_token_expiry = datetime.fromtimestamp(float(acquired)) \
                                        + timedelta(seconds=int(expires_in)-Multivers.EXPIRE_MARGIN)
-            print(self.access_token_expiry)
         else:
             self.access_token_expiry = None
 
@@ -191,7 +192,7 @@ class Multivers:
         Settings.set('access_token_acquired', str(time.time()))
 
     def _auth(self):
-        now = datetime.utcnow()
+        now = datetime.now()
 
         if self.access_token and self.access_token_expiry > now:
             pass
@@ -216,7 +217,10 @@ class Multivers:
             'Accept': 'application/json',
         }, json=data)
 
-        return response.json()
+        try:
+            return response.json()
+        except JSONDecodeError:
+            raise Exception(response.text)
 
     def get_administrations(self):
         return self._get("AdministrationNVL")

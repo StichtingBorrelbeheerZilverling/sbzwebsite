@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 
 from apps.multivers import tools
 from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
-from apps.util.forms import CachingModelMultipleChoiceField
+from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 
 
 class FileForm(forms.Form):
@@ -121,7 +121,7 @@ class ConceptOrderDrinkForm(ModelForm):
 
 
 class ConceptOrderDrinkLineForm(ModelForm):
-    product = CachingModelMultipleChoiceField(queryset=Product.objects)
+    product = CachingModelChoiceField(queryset=Product.objects)
 
     class Meta:
         model = ConceptOrderDrinkLine

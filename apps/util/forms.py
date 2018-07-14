@@ -1,13 +1,26 @@
 from django.core.cache import cache
-from django.forms import MultipleChoiceField
+from django.forms.models import ModelChoiceIterator, ModelChoiceField, ModelMultipleChoiceField
 
 
-class CachingModelMultipleChoiceField(MultipleChoiceField):
-    def __init__(self, queryset, *args, **kwargs):
-        choices = cache.get(str(queryset))
+class CachingModelChoiceIterator(ModelChoiceIterator):
+    def _queryset_key(self):
+        return str(self.queryset.model._meta.label) + str(self.queryset.query.where).replace(" ", "")
 
-        if choices is None:
-            choices = [(x.pk, str(x)) for x in queryset.all()]
-            cache.set(str(queryset), choices, 2)
+    def __iter__(self):
+        choices = cache.get_or_set(self._queryset_key(),
+                                   lambda: list(super(CachingModelChoiceIterator, self).__iter__()),
+                                   2)
+        yield from iter(choices)
 
-        super(CachingModelMultipleChoiceField, self).__init__(choices=choices, *args, **kwargs)
+    def __len__(self):
+        return cache.get_or_set("len:" + self._queryset_key(),
+                                super(CachingModelChoiceIterator, self).__len__,
+                                2)
+
+
+class CachingModelMultipleChoiceField(ModelMultipleChoiceField):
+    iterator = CachingModelChoiceIterator
+
+
+class CachingModelChoiceField(ModelChoiceField):
+    iterator = CachingModelChoiceIterator
