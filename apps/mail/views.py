@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 
@@ -7,6 +8,7 @@ from apps.mail.forms import GroupForm
 from apps.mail.models import Group
 
 
+@login_required
 def index(request):
     groups = Group.objects
 
@@ -28,6 +30,7 @@ def index(request):
     })
 
 
+@login_required
 def sync(request):
     if request.method == 'POST':
         commit = True
@@ -46,6 +49,7 @@ def warn_sync(request):
     messages.warning(request, 'Please remember to synchronize the aliases with Hornet.')
 
 
+@login_required
 @require_http_methods(["POST"])
 def group_create(request):
     form = GroupForm(request.POST)
@@ -57,6 +61,7 @@ def group_create(request):
     return redirect('mail:index')
 
 
+@login_required
 @require_http_methods(["POST"])
 def group_edit(request, pk):
     group = get_object_or_404(Group, pk=pk)
@@ -69,6 +74,7 @@ def group_edit(request, pk):
     return redirect('mail:index')
 
 
+@login_required
 @require_http_methods(["POST"])
 def group_delete(request, pk):
     group = get_object_or_404(Group, pk=pk)
