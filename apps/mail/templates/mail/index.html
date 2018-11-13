@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% load i18n bootstrap_form %}
+
+{% block title %}{% trans 'Mail Administration' %}{% endblock %}
+
+{% block content %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-warning">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h1>
+        Groups
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#create-Group">
+            +
+        </button>
+        <a class="btn btn-primary" href="{% url 'mail:sync' %}">
+            Sync with Hornet
+        </a>
+    </h1>
+    <h2>People</h2>
+    {% for person in people %}
+        {% include 'mail/group.html' with group=person %}
+    {% endfor %}
+
+    <h2>Functions</h2>
+    {% for function in functions %}
+        {% include 'mail/group.html' with group=function %}
+    {% endfor %}
+
+    <h2>Organizations</h2>
+    {% for organization in organizations %}
+        {% include 'mail/group.html' with group=organization %}
+    {% endfor %}
+
+    {% bootstrap_create_modal create_form 'mail:group_create' %}
+{% endblock %}

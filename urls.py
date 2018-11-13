@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^multivers/', include('apps.multivers.urls', namespace='multivers')),
     url(r'^grolsch/', include('apps.grolsch.urls', namespace='grolsch')),
+    url(r'^mail/', include('apps.mail.urls', namespace='mail')),
     url(r'^', include('apps.general.urls', namespace='general')),
 ]
 

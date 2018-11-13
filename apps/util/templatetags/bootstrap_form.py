@@ -21,6 +21,8 @@ def _bootstrap_form_field_template(field):
         return "bootstrap_form/field_number.html"
     elif isinstance(widget, widgets.TextInput):
         return "bootstrap_form/field_text.html"
+    elif isinstance(widget, widgets.EmailInput):
+        return "bootstrap_form/field_email.html"
     elif isinstance(widget, widgets.SelectMultiple):
         return "bootstrap_form/field_choice_multiple.html"
     elif isinstance(widget, widgets.Select):

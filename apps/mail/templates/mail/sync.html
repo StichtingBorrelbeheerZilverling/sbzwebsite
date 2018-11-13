@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block title %}{% trans 'Sync Mail Addresses' %}{% endblock %}
+
+{% block content %}
+    <h1>Log</h1>
+    <p>
+        {% if commit %}
+            These changes were committed:
+        {% else %}
+            Synchronization with <a href="https://hornet.snt.utwente.nl/">Hornet</a> does not happen automatically. The
+            following changes will happen if they are committed:
+        {% endif %}
+    </p>
+    <pre>{{ log.as_str }}</pre>
+
+    <form action="{% url 'mail:sync' %}" method="POST">
+        {% csrf_token %}
+        <input class="btn btn-primary" type="submit" value="Commit">
+    </form>
+{% endblock %}

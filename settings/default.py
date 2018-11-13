@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.general',
     'apps.multivers',
     'apps.grolsch',
+    'apps.mail',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -103,3 +104,4 @@ LOGIN_URL = 'admin:login'
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
+HORNET_FORBID_REMOVAL = ["supernerd@sbz.utwente.nl"]

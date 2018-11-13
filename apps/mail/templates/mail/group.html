@@ -1,0 +1,34 @@
+{% load i18n bootstrap_form %}
+
+<p>
+    <span class="oi oi-{{ group.iconic_icon }}"></span>
+    <strong>{{ group.name }}</strong>
+    {% if group.outgoing_email %}
+        <span class="oi oi-arrow-right"></span>
+        {{ group.outgoing_email }}
+    {% endif %}
+    <a data-toggle="modal" data-target="#edit-Group-{{ group.pk }}" href="#">
+        <span class="oi oi-pencil"></span>
+    </a>
+    <a data-toggle="modal" data-target="#delete-Group-{{ group.pk }}" href="#">
+        <span class="oi oi-trash"></span>
+    </a>
+</p>
+{% if group.incoming_aliases_list %}
+<p>
+    Incoming aliases: {{ group.incoming_aliases_list|join:", " }}
+</p>
+{% endif %}
+{% if group.group_destinations.all %}
+<p>
+    Group members:
+    <ul style="list-style-type: none">
+        {% for destination in group.group_destinations.all %}
+            <li><span class="oi oi-{{ destination.iconic_icon }}"></span> {{ destination }}</li>
+        {% endfor %}
+    </ul>
+</p>
+{% endif %}
+
+{% bootstrap_edit_modal group group.form 'mail:group_edit' group.pk %}
+{% bootstrap_delete_modal group 'mail:group_delete' group.pk %}

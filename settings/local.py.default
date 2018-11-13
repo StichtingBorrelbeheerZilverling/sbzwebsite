@@ -42,3 +42,7 @@ DE_KLOK_EMAIL = ""
 DE_KLOK_PASSWORD = ""
 
 FULL_URL_PREFIX = "https://www.sbz.utwente.nl"
+
+
+HORNET_CLIENT_ID = ""
+HORNET_CLIENT_SECRET = ""
