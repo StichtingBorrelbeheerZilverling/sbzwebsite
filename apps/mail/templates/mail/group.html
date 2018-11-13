@@ -6,6 +6,10 @@
     {% if group.outgoing_email %}
         <span class="oi oi-arrow-right"></span>
         {{ group.outgoing_email }}
+    {% elif group.group_destinations.all|length_is:"1" %}
+        <span class="oi oi-arrow-right"></span>
+        <span class="oi oi-{{ group.group_destinations.all.0.iconic_icon }}"></span>
+        {{ group.group_destinations.all.0 }}
     {% endif %}
     <a data-toggle="modal" data-target="#edit-Group-{{ group.pk }}" href="#">
         <span class="oi oi-pencil"></span>
@@ -20,6 +24,7 @@
 </p>
 {% endif %}
 {% if group.group_destinations.all %}
+{% if group.outgoing_email or not group.group_destinations.all|length_is:"1" %}
 <p>
     Group members:
     <ul style="list-style-type: none">
@@ -28,6 +33,7 @@
         {% endfor %}
     </ul>
 </p>
+{% endif %}
 {% endif %}
 
 {% bootstrap_edit_modal group group.form 'mail:group_edit' group.pk %}
