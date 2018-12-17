@@ -2,6 +2,13 @@
 {% load i18n bootstrap_form %}
 
 {% block content %}
+    <h1>
+        Multivers/Alexia products
+        <button class="btn btn-secondary" data-toggle="modal" data-target="#create-Product">
+            + Create
+        </button>
+    </h1>
+
     <table class="table">
         <thead>
         <tr>
@@ -42,6 +49,8 @@
 {% endblock %}
 
 {% block modals %}
+    {% bootstrap_create_modal create_form 'multivers:product_add' %}
+
     {% for product in product_list %}
         {% bootstrap_edit_modal product product.edit_form 'multivers:product_edit' product.pk %}
         {% bootstrap_delete_modal product 'multivers:product_delete' product.pk %}

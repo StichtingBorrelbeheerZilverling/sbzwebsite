@@ -10,7 +10,8 @@ urlpatterns = [
     url(r'^location/(?P<pk>[0-9]+)/edit$', view=views.LocationUpdate.as_view(), name='location_update'),
     url(r'^settings/(?P<pk>[0-9]+)/edit$', view=views.SettingsUpdate.as_view(), name='settings_update'),
 
-    url(r'^products', view=views.Products.as_view(), name='products'),
+    url(r'^products$', view=views.Products.as_view(), name='products'),
+    url(r'^product/add$', view=views.ProductCreate.as_view(), name='product_add'),
     url(r'^product/(?P<pk>[0-9]+)/edit$', view=views.ProductUpdate.as_view(), name='product_edit'),
     url(r'^product/(?P<pk>[0-9]+)/delete$', view=views.ProductDelete.as_view(), name='product_delete'),
 

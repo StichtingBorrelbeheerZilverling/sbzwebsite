@@ -6,6 +6,6 @@
         {% csrf_token %}
         {{ form|bootstrap_form }}
         <a href="{% url 'multivers:products' %}" class="btn btn-secondary">Back</a>
-        <input type="submit" class="btn btn-primary float-right" value="Update">
+        <input type="submit" class="btn btn-primary float-right" value="{% if object %}Update{% else %}Create{% endif %}">
     </form>
 {% endblock %}

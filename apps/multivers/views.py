@@ -270,10 +270,18 @@ class Products(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super(Products, self).get_context_data(**kwargs)
 
+        ctx['create_form'] = ProductForm()
+
         for product in ctx['product_list']:
             product.edit_form = ProductForm(instance=product)
 
         return ctx
+
+
+class ProductCreate(LoginRequiredMixin, CreateView):
+    form_class = ProductForm
+    template_name = 'multivers/product_form.html'
+    success_url = reverse_lazy('multivers:products')
 
 
 class ProductUpdate(LoginRequiredMixin, UpdateView):
