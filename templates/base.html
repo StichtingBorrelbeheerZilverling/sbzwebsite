@@ -70,6 +70,20 @@
                     <li class="nav-item {% if active_id == "mail" %}active{% endif %}">
                         <a href="{% url 'mail:index' %}" class="nav-link">{% trans 'Mail' %}</a>
                     </li>
+                    <li class="dropdown {% if active_id == "flow" %}active{% endif %}">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+                            {% trans 'FlowGuard' %}
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Monitor' %}</a>
+                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Stats' %}</a>
+                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Lookup' %}</a>
+                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'History' %}</a>
+                            </li>
+                        </ul>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">

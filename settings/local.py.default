@@ -27,6 +27,7 @@ DATABASES = {
 # Jouw secret key
 # http://www.miniwebtool.com/django-secret-key-generator/
 SECRET_KEY = ''
+UPDATE_FLOW_SECRET = ''
 
 # Email settings
 EMAIL_HOST = 'localhost'
@@ -42,7 +43,9 @@ DE_KLOK_EMAIL = ""
 DE_KLOK_PASSWORD = ""
 
 FULL_URL_PREFIX = "https://www.sbz.utwente.nl"
-
+FULL_LIVE_URL_PREFIX = "wss://www.sbz.utwente.nl/ws"
+FULL_LIVE_URL_HOST = "www.sbz.utwente.nl"
+FULL_LIVE_URL_PORT = 80
 
 HORNET_CLIENT_ID = ""
 HORNET_CLIENT_SECRET = ""

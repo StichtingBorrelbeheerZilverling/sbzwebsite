@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.multivers',
     'apps.grolsch',
     'apps.mail',
+    'apps.flowguard',
 ]
 
 MIDDLEWARE_CLASSES = [

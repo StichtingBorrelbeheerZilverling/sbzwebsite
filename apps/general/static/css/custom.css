@@ -5,3 +5,19 @@ body {
 .dropdown-menu form {
     min-width: 20rem;
 }
+
+.livedot {
+    display: none;
+}
+
+.livedot::after {
+    content: "\2b24";
+    color: #62c462;
+    animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
