@@ -21,3 +21,42 @@ body {
     opacity: 0;
   }
 }
+
+h1.faded, h2.faded, h3.faded {
+    opacity: 0.5;
+}
+
+.flow-history-td {
+    position: relative;
+}
+
+.flow-history-values {
+    width: 100%;
+    position: relative;
+}
+
+.flow-history-value {
+    box-sizing: border-box;
+    border: 1px solid #afafaf;
+    border-left: none;
+    display: inline-block;
+    width: 5px;
+    height: 40px;
+}
+
+.flow-history-value:first-child {
+    width: 6px;
+    border-left: 1px solid #afafaf;
+}
+
+.flow-history-value-none {
+    background-color: white;
+}
+
+.flow-history-value-present {
+    background-color: #ddddff;
+}
+
+.flow-history-value-high {
+    background-color: #aaaaff;
+}

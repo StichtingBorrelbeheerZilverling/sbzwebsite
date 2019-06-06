@@ -78,9 +78,9 @@
                         <ul class="dropdown-menu">
                             <li>
                                 <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Monitor' %}</a>
-                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Stats' %}</a>
-                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Lookup' %}</a>
-                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'History' %}</a>
+                                <a href="{% url 'flowguard:stats' %}" class="dropdown-item">{% trans 'Stats' %}</a>
+                                <a href="{% url 'flowguard:lookup' %}" class="dropdown-item">{% trans 'Lookup' %}</a>
+                                <a href="{% url 'flowguard:history' %}" class="dropdown-item">{% trans 'History' %}</a>
                             </li>
                         </ul>
                     </li>
@@ -125,7 +125,6 @@
                         </div>
                     {% endif %}
                 </li>
-                {#                        <a href="{% url 'admin:login' %}">{% trans 'Login' %}</a>#}
             </ul>
         </div>
     </div>
