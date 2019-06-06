@@ -41,7 +41,7 @@ h1.faded, h2.faded, h3.faded {
     border-left: none;
     display: inline-block;
     width: 5px;
-    height: 40px;
+    height: 25px;
 }
 
 .flow-history-value:first-child {
