@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block title %}SBZ -- FlowGuard History{% endblock %}
+
+{% block content %}
+    <h1>
+        <a href="{% url "flowguard:history_month" prev_year prev_month %}" class="btn btn-secondary">‹</a>
+        {{ start_date|date:"F Y"|capfirst }}
+        <a href="{% url "flowguard:history_month" next_year next_month %}" class="btn btn-secondary">›</a>
+    </h1>
+    {% for channel in channel_values %}
+        <h2>
+
+            {{ channel.channel.name }}
+
+        </h2>
+        <table class="table">
+            {% for week in channel.flows %}
+                <tr>
+                    {% for day in week %}
+                        <td class="flow-history-td">
+                            <h3 class="{% if day.date.year != year or day.date.month != month %}faded{% endif %}">{{ day.date|date:"D j" }}</h3>
+                            <div class="flow-history-values">
+                                {% for hour in day.hours %}<span class="flow-history-value
+                                                                        {% if hour > 0.0 %}
+                                                                            {% if hour > 5.0 %}flow-history-value-high
+                                                                            {% else %}flow-history-value-present
+                                                                            {% endif %}
+                                                                        {% else %}flow-history-value-none
+                                                                        {% endif %}"
+                                                                 data-value="{{ hour|escapejs }}">
+
+                                </span>{% endfor %}
+                            </div>
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
+{% endblock %}
