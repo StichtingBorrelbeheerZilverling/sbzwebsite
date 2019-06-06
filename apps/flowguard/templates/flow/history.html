@@ -10,6 +10,9 @@
         {{ start_date|date:"F Y"|capfirst }}
         <a href="{% url "flowguard:history_month" next_year next_month %}" class="btn btn-secondary">›</a>
     </h1>
+    <p>
+        Selection: <span id="selection">Try dragging across the flow indicators</span>
+    </p>
     {% for channel in channel_values %}
         <h2>
 
@@ -30,7 +33,9 @@
                                                                             {% endif %}
                                                                         {% else %}flow-history-value-none
                                                                         {% endif %}"
-                                                                 data-value="{{ hour|escapejs }}">
+                                                                 data-value="{{ hour|escapejs }}"
+                                                                 draggable="true"
+                                                                 data-channel="{{ channel.channel.pk }}" data-date="{{ day.date|date:"D j F" }}" data-hour="{{ forloop.counter0 }}">
 
                                 </span>{% endfor %}
                             </div>
@@ -40,4 +45,66 @@
             {% endfor %}
         </table>
     {% endfor %}
+
+    <script type="text/javascript">
+        let currentStart = null;
+
+        function updateRange(start, end) {
+            for(let node of document.querySelectorAll('.flow-history-value-select-start')) node.classList.remove('flow-history-value-select-start');
+            for(let node of document.querySelectorAll('.flow-history-value-select-end')) node.classList.remove('flow-history-value-select-end');
+            for(let node of document.querySelectorAll('.flow-history-value-select')) node.classList.remove('flow-history-value-select');
+
+            if(start === end || start.dataset.channel !== end.dataset.channel) return '(empty range)';
+
+            let total = 0.0;
+            let node = start;
+            node.classList.add('flow-history-value-select-start');
+            total += parseFloat(node.dataset.value);
+
+            while(true) {
+                if(node.nextElementSibling) {
+                    node = node.nextElementSibling;
+                } else if(node.parentNode.parentNode.nextElementSibling) {
+                    node = node.parentNode.parentNode.nextElementSibling.querySelector('.flow-history-value');
+                } else {
+                    let nextTr = node.parentNode.parentNode.parentNode.nextElementSibling;
+
+                    if(!nextTr) {
+                        return updateRange(end, start);
+                    }
+
+                    node = nextTr.querySelector('.flow-history-value');
+                }
+
+                total += parseFloat(node.dataset.value);
+                if(node == end) break;
+
+                node.classList.add('flow-history-value-select');
+            }
+
+            end.classList.add('flow-history-value-select-end');
+
+            let left = `${start.dataset.date} ${start.dataset.hour}:00`;
+            let right = `${end.dataset.date} ${end.dataset.hour}:59`;
+
+            return `from ${left} to ${right}: ${total.toFixed(1)}ℓ`;
+        }
+
+        window.addEventListener('load', function() {
+            for(const value of document.querySelectorAll('.flow-history-value')) {
+                value.addEventListener('mousedown', function(e) {
+                    e.target.classList.add('flow-history-value-select-start');
+                    currentStart = e.target;
+                });
+
+                value.addEventListener('mouseover', function(e) {
+                    if((e.buttons & 1) == 1) {
+                        let selectionText = updateRange(currentStart, e.target);
+                        document.querySelector('#selection').textContent = selectionText;
+                        e.preventDefault();
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}
