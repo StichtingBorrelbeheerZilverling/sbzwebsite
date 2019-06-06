@@ -41,11 +41,36 @@ h1.faded, h2.faded, h3.faded {
     border-left: none;
     display: inline-block;
     width: 5px;
-    height: 40px;
+    height: 25px;
 }
 
 .flow-history-value:first-child {
     width: 6px;
+    border-left: 1px solid #afafaf;
+}
+
+.flow-history-value.flow-history-value-select-start {
+    border: 2px solid red;
+    border-right: 1px solid #afafaf;
+}
+
+.flow-history-value.flow-history-value-select-end {
+    border: 2px solid red;
+    border-left: none;
+}
+
+.flow-history-value.flow-history-value-select-end:first-child {
+    border: 2px solid red;
+    border-left: 1px solid #afafaf;
+}
+
+.flow-history-value.flow-history-value-select {
+    border: 2px solid red;
+    border-left: none;
+    border-right: 1px solid #afafaf;
+}
+
+.flow-history-value.flow-history-value-select:first-child {
     border-left: 1px solid #afafaf;
 }
 
