@@ -9,6 +9,7 @@ urlpatterns = [
     url(r'^grolsch/', include('apps.grolsch.urls', namespace='grolsch')),
     url(r'^mail/', include('apps.mail.urls', namespace='mail')),
     url(r'^flow/', include('apps.flowguard.urls', namespace='flowguard')),
+    url(r'^hygiene/', include('apps.hygiene.urls', namespace='hygiene')),
     url(r'^', include('apps.general.urls', namespace='general')),
 ]
 

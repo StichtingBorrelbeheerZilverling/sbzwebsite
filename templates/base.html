@@ -84,6 +84,17 @@
                             </li>
                         </ul>
                     </li>
+                    <li class="dropdown {% if active_id == "hygiene" %}active{% endif %}">
+                        <a href="" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+                            {% trans 'Hygiene' %}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url 'hygiene:check' %}" class="dropdown-item">{% trans 'Check Today' %}</a>
+                                <a href="{% url 'hygiene:plan' %}" class="dropdown-item">{% trans 'Planning' %}</a>
+                            </li>
+                        </ul>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">

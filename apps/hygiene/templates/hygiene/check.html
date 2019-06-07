@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% load i18n bootstrap_form %}
+
+{% block title %}{% trans 'SBZ -- Hygiene Check' %}{% endblock %}
+
+{% block content %}
+    <h1>{{ check_date }}</h1>
+
+    {% if obj.checker != user %}
+        <div class="alert alert-warning" role="alert">
+            {% trans 'You are not assigned to check today, you will be assigned automatically on save.' %}
+        </div>
+    {% endif %}
+
+    <form action="" method="POST">
+        {% csrf_token %}
+        {% for location in locations %}
+            <h2>{{ location }}</h2>
+            {% for item in location.items %}
+                {{ item.form.result.errors|bootstrap_form_errors }}
+                <p>
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        {% for option in item.form.result.field.choices %}
+                            {% if option.0 != '' %}
+                                <label class="btn btn-outline-secondary {% if item.form.result.initial == option.0 %}active{% endif %}">
+                                    <input type="radio" name="{{ item.form.result.html_name }}" value="{{ option.0 }}" {% if item.form.result.initial == option.0 %}checked{% endif %}>
+                                    {{ option.1 }}
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <label style="margin-left: 1ch">{{ item.name }}</label>
+                </p>
+            {% endfor %}
+        {% endfor %}
+        <input type="submit" value="{% trans 'Save' %}" class="btn btn-primary">
+    </form>
+{% endblock %}

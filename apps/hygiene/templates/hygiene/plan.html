@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% load i18n bootstrap_form %}
+
+{% block title %}{% trans 'SBZ -- Hygiene Check Planning' %}{% endblock %}
+
+{% block content %}
+    <h1>
+        <a href="{% url "hygiene:plan_month" prev_year prev_month %}" class="btn btn-secondary">‹</a>
+        {{ start_date|date:"F Y"|capfirst }}
+        <a href="{% url "hygiene:plan_month" next_year next_month %}" class="btn btn-secondary">›</a>
+    </h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <table>
+            {% for week in weeks %}
+                <tr>
+                    {% for form in week %}
+                        <td>
+                            {% if form.instance.pk %}
+                                <a href="{% url 'hygiene:check_day' form.instance.pk %}">
+                                    <h3 class="{% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h3>
+                                </a>
+                            {% else %}
+                                <h3 class="{% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h3>
+                            {% endif %}
+
+                            {{ form.date }}
+                            <div class="form-group">
+                                {{ form.checker.errors|bootstrap_form_errors }}
+                                <select name="{{ form.checker.html_name }}" id="{{ form.checker.id_for_label }}" class="form-control">
+                                    {% for option in form.checker.field.choices %}
+                                        <option value="{{ option.0 }}"
+                                                {% if form.checker.initial == option.0 %}selected{% endif %}>{{ option.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+
+        <input type="submit" value="Save" class="btn btn-primary">
+    </form>
+{% endblock %}
