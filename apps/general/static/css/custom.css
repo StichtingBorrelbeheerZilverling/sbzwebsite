@@ -23,7 +23,7 @@ body {
 }
 
 h1.faded, h2.faded, h3.faded {
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
 .flow-history-td {
@@ -64,6 +64,10 @@ h1.faded, h2.faded, h3.faded {
     border-left: 1px solid #afafaf;
 }
 
+.flow-history-value.flow-history-value-select-start.flow-history-value-select-end {
+    border: 2px solid red;
+}
+
 .flow-history-value.flow-history-value-select {
     border: 2px solid red;
     border-left: none;
@@ -72,16 +76,4 @@ h1.faded, h2.faded, h3.faded {
 
 .flow-history-value.flow-history-value-select:first-child {
     border-left: 1px solid #afafaf;
-}
-
-.flow-history-value-none {
-    background-color: white;
-}
-
-.flow-history-value-present {
-    background-color: #ddddff;
-}
-
-.flow-history-value-high {
-    background-color: #aaaaff;
 }
