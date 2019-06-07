@@ -16,6 +16,7 @@
                 <th>Price tracked?</th>
                 <th>Last price</th>
                 <th>Current discount price</th>
+                <th><!-- Delete button --></th>
             </tr>
         </thead>
         <tbody>
@@ -26,6 +27,12 @@
                     <td>{{ product.price_track_id|yesno:"Yes,No"  }}</td>
                     <td>{{ product.last_price_str|default:"–" }}</td>
                     <td>{{ product.last_discount_price_str|default:"–" }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                                data-target="#delete-Product-{{ product.pk }}">
+                            <span class="oi oi-trash"></span>
+                        </button>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
@@ -40,4 +47,7 @@
 
 {% block modals %}
     {% bootstrap_form_modal "Product" "Create product from URL" create_form 'grolsch:product_create' %}
+    {% for product in product_list %}
+        {% bootstrap_delete_modal product 'grolsch:product_delete' product.pk %}
+    {% endfor %}
 {% endblock %}
