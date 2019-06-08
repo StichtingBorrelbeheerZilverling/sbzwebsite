@@ -7,6 +7,7 @@ requests>=2.19.1,<2.20
 raven==5.0.0
 beautifulsoup4>=4.6.0
 socketIO-Client>=0.7.2,<0.8
+icalendar>=4.0.3,<4.1
 
 Flask>=1.0.3,<1.1
 Flask-SocketIO>=4.0.0,<4.1

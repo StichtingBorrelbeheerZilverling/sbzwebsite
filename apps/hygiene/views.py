@@ -1,7 +1,13 @@
 import calendar
+import icalendar
 
 import datetime
-from django.shortcuts import render, redirect
+
+import pytz
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 
 from apps.hygiene.forms import CheckDayForm, CheckDayItemForm
@@ -97,3 +103,22 @@ def plan(request, year=None, month=None):
         return redirect('hygiene:plan')
 
     return render(request, 'hygiene/plan.html', locals())
+
+
+def ical(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    days = CheckDay.objects.filter(checker=user).all()
+    sbz_location = pytz.timezone('Europe/Amsterdam')
+
+    cal = icalendar.Calendar()
+
+    for day in days:
+        event = icalendar.Event()
+        event['uid'] = day.pk
+        event.add('dtstart', sbz_location.localize(datetime.datetime.combine(day.date, datetime.time(8, 30))).astimezone(pytz.UTC))
+        event.add('dtend', sbz_location.localize(datetime.datetime.combine(day.date, datetime.time(9, 0))).astimezone(pytz.UTC))
+        event.add('summary', 'Check Drink Rooms')
+        # event.add('description', reverse_lazy('hygiene:check_day', day.pk))
+        cal.add_component(event)
+
+    return HttpResponse(cal.to_ical(), content_type='text/calendar')

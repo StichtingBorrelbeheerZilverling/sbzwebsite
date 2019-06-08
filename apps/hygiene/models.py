@@ -6,6 +6,9 @@ class CheckDay(models.Model):
     date = models.DateField()
     checker = models.ForeignKey("auth.User")
 
+    def __str__(self):
+        return self.date.format("%Y-%m-%d")
+
 
 class CheckLocation(models.Model):
     name = models.CharField(max_length=255)

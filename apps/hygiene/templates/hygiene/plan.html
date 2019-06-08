@@ -10,6 +10,7 @@
         {{ start_date|date:"F Y"|capfirst }}
         <a href="{% url "hygiene:plan_month" next_year next_month %}" class="btn btn-secondary">›</a>
     </h1>
+    <a href="{% url 'hygiene:ical' user.pk %}">Your calendar (.ics)</a>
     <form action="" method="POST">
         {% csrf_token %}
         <table>
