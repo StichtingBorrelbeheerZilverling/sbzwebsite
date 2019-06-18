@@ -5,9 +5,10 @@ from django.utils.translation import ugettext_lazy as _
 class CheckDay(models.Model):
     date = models.DateField()
     checker = models.ForeignKey("auth.User")
+    comments = models.TextField(blank=True)
 
     def __str__(self):
-        return self.date.format("%Y-%m-%d")
+        return self.date.strftime("%Y-%m-%d")
 
 
 class CheckLocation(models.Model):
@@ -28,8 +29,8 @@ class CheckItem(models.Model):
 class CheckDayItem(models.Model):
     RESULT_CHOICES = [
         ('GOOD', _('✓')),
-        ('ACCEPT', _('∼')),
-        ('BAD', _('🗙')),
+        ('ACCEPT', _('~')),
+        ('BAD', _('✗')),
     ]
 
     item = models.ForeignKey("hygiene.CheckItem")

@@ -1,0 +1,6 @@
+{% load bootstrap_form %}
+<div class="form-group">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field.errors|bootstrap_form_errors }}
+    <textarea class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}">{{ field.initial|default:"" }}</textarea>
+</div>
