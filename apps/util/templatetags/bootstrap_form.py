@@ -21,6 +21,8 @@ def _bootstrap_form_field_template(field):
         return "bootstrap_form/field_number.html"
     elif isinstance(widget, widgets.TextInput):
         return "bootstrap_form/field_text.html"
+    elif isinstance(widget, widgets.Textarea):
+        return "bootstrap_form/field_textarea.html"
     elif isinstance(widget, widgets.EmailInput):
         return "bootstrap_form/field_email.html"
     elif isinstance(widget, widgets.SelectMultiple):
@@ -34,6 +36,7 @@ def _bootstrap_form_field_template(field):
     elif isinstance(field.field, fields.BooleanField):
         return "bootstrap_form/field_bool.html"
     else:
+        print("Unknown: {}".format(type(widget)))
         return "bootstrap_form/field_default.html"
 
 

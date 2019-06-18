@@ -17,6 +17,12 @@ class CheckDayForm(forms.ModelForm):
         model = CheckDay
 
 
+class CheckDayCommentsForm(forms.ModelForm):
+    class Meta:
+        fields = ['comments']
+        model = CheckDay
+
+
 class CheckDayItemForm(forms.ModelForm):
     class Meta:
         model = CheckDayItem

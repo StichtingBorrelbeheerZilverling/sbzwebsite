@@ -4,27 +4,38 @@ import icalendar
 import datetime
 
 import pytz
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 
-from apps.hygiene.forms import CheckDayForm, CheckDayItemForm
+from apps.hygiene.forms import CheckDayForm, CheckDayItemForm, CheckDayCommentsForm
 from apps.hygiene.models import CheckDay, CheckItem, CheckDayItem, CheckLocation
 
 
+@login_required
 def check(request, pk=None):
     obj = CheckDay.objects.filter(date=datetime.date.today()).first() if pk is None else CheckDay.objects.filter(pk=pk).first()
     check_date = obj.date if obj is not None else datetime.date.today()
+    obj_form = CheckDayCommentsForm(instance=obj, data=request.POST)
 
-    if obj is None:
-        items = {}
-    else:
-        items = CheckDayItem.objects.filter(day=obj)
-        items = {item.item.pk: item for item in items}
+    if request.method == 'POST':
+        if obj_form.is_valid():
+            if obj is None:
+                obj = obj_form.save(commit=False)
+                obj.date = check_date
+                obj.checker = request.user
+            elif obj.checker != request.user:
+                obj = obj_form.save(commit=False)
+                obj.checker = request.user
+            else:
+                obj = obj_form.save()
 
-    all_good = True
+    items = CheckDayItem.objects.filter(day=obj)
+    items = {item.item.pk: item for item in items}
+
+    all_good = obj is not None
 
     locations = CheckLocation.objects.all()
 
@@ -38,14 +49,7 @@ def check(request, pk=None):
             initial = {'result': initial_result}
             item.form = CheckDayItemForm(prefix=item.pk, instance=instance, data=data, initial=initial)
 
-            if request.method == 'POST':
-                if obj is None:
-                    obj = CheckDay(date=check_date, checker=request.user)
-                    obj.save()
-                elif obj.checker != request.user:
-                    obj.checker = request.user
-                    obj.save()
-
+            if request.method == 'POST' and obj is not None:
                 if item.form.is_valid():
                     checked_item = item.form.save(commit=False)
                     checked_item.day = obj
@@ -60,6 +64,7 @@ def check(request, pk=None):
     return render(request, 'hygiene/check.html', locals())
 
 
+@login_required
 def plan(request, year=None, month=None):
     now = timezone.now()
     year = now.year if year is None else int(year)
