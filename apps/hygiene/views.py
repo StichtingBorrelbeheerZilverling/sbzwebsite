@@ -1,4 +1,6 @@
 import calendar
+from collections import defaultdict
+
 import icalendar
 
 import datetime
@@ -80,7 +82,7 @@ def plan(request, year=None, month=None):
     dates = list(cal.itermonthdates(year, month))
     weeks_dates = [dates[i*7:(i+1)*7] for i in range(len(dates) // 7)]
 
-    check_days = CheckDay.objects.filter(date__gte=dates[0], date__lte=dates[-1])
+    check_days = CheckDay.objects.filter(date__gte=dates[0], date__lte=dates[-1]).prefetch_related('checkdayitem_set')
     check_days = {check_day.date: check_day for check_day in check_days}
 
     weeks = []
@@ -93,6 +95,21 @@ def plan(request, year=None, month=None):
             data = request.POST if request.method == 'POST' else None
             form = CheckDayForm(prefix=date.strftime("%Y%m%d"), instance=instance, data=data, initial={'date': date, 'checker': instance.checker.pk if instance else None})
 
+            points = defaultdict(list)
+
+            if instance:
+                for item in instance.checkdayitem_set.all():
+                    points[item.item.location].append({
+                        'GOOD': 'A', 'ACCEPT': 'B', 'BAD': 'C'
+                    }[item.result])
+
+                for location in points.keys():
+                    results = list(sorted(points[location]))
+                    result_many = results[len(results)*3//4]
+                    result_few = results[len(results)*7//8]
+                    result = {'AA': 'A', 'AB': 'A', 'AC': 'B', 'BB': 'B', 'BC': 'C', 'CC': 'C'}
+                    points[location] = result[result_many + result_few]
+
             if request.method == 'POST' and form.is_valid():
                 if form.cleaned_data['checker'] is None:
                     if instance is not None:
@@ -100,7 +117,7 @@ def plan(request, year=None, month=None):
                 else:
                     form.save()
 
-            week.append(form)
+            week.append((form, dict(points)))
 
         weeks.append(week)
 

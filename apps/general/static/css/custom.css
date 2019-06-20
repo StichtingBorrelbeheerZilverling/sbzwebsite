@@ -22,8 +22,12 @@ body {
   }
 }
 
-h1.faded, h2.faded, h3.faded {
+h1.faded, h2.faded, h3.faded, h3.faded {
     opacity: 0.3;
+}
+
+h1.no-margin, h2.no-margin, h3.no-margin, h4.no-margin {
+    margin: 0;
 }
 
 .flow-history-td {
@@ -77,3 +81,22 @@ h1.faded, h2.faded, h3.faded {
 .flow-history-value.flow-history-value-select:first-child {
     border-left: 1px solid #afafaf;
 }
+
+.location-status-container {
+    height: 30px;
+}
+
+.location-status {
+    display: inline-block;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    font-size: small;
+    text-align: center;
+    font-weight: bolder;
+}
+
+.location-status-A { background-color: #009900 }
+.location-status-B { background-color: #bbbb00 }
+.location-status-C { background-color: #cc0000 }
