@@ -91,6 +91,7 @@
 
         function onStart(e) {
             if(e.buttons & 1) {
+                e.preventDefault();
                 e.target.classList.add('flow-history-value-select-start');
                 currentStart = e.target;
                 update(e.target);
@@ -99,6 +100,7 @@
 
         function onEnd(e) {
             if(e.buttons & 1) {
+                e.preventDefault();
                 update(e.target);
                 e.preventDefault();
             }
