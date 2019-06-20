@@ -14,6 +14,10 @@ class CheckDay(models.Model):
 class CheckLocation(models.Model):
     name = models.CharField(max_length=255)
 
+    @property
+    def shorthand(self):
+        return self.name[:2]
+
     def __str__(self):
         return self.name
 

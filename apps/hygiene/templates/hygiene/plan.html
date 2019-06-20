@@ -16,15 +16,23 @@
         <table>
             {% for week in weeks %}
                 <tr>
-                    {% for form in week %}
+                    {% for form, locations in week %}
                         <td>
                             {% if form.instance.pk %}
                                 <a href="{% url 'hygiene:check_day' form.instance.pk %}">
-                                    <h3 class="{% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h3>
+                                    <h4 class="no-margin {% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h4>
                                 </a>
                             {% else %}
-                                <h3 class="{% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h3>
+                                <h4 class="no-margin {% if form.date.initial.year != year or form.date.initial.month != month %}faded{% endif %}">{{ form.date.initial|date:"D j" }}</h4>
                             {% endif %}
+
+                            <div class="location-status-container">
+                                {% for location, points in locations.items %}
+                                    <span class="location-status location-status-{{ points }}">
+                                        {{ location.shorthand }}
+                                    </span>
+                                {% endfor %}
+                            </div>
 
                             {{ form.date }}
                             <div class="form-group">
@@ -36,6 +44,7 @@
                                     {% endfor %}
                                 </select>
                             </div>
+
                         </td>
                     {% endfor %}
                 </tr>
