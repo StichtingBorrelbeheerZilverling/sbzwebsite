@@ -77,7 +77,10 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item">{% trans 'Monitor' %}</a>
+                                <a href="{% url 'flowguard:monitor' %}" class="dropdown-item" target="_blank">
+                                    {% trans 'Monitor' %}
+                                    <span class="oi oi-external-link float-right"></span>
+                                </a>
                                 <a href="{% url 'flowguard:stats' %}" class="dropdown-item">{% trans 'Stats' %}</a>
                                 <a href="{% url 'flowguard:lookup' %}" class="dropdown-item">{% trans 'Lookup' %}</a>
                                 <a href="{% url 'flowguard:history' %}" class="dropdown-item">{% trans 'History' %}</a>

@@ -1,94 +1,101 @@
-{% extends 'base.html' %}
-
 {% load i18n static %}
 
-{% block title %}{% trans 'SBZ -- Flowmeter Monitor' %}{% endblock %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>SBZ -- Monitor</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.3.1/slate/bootstrap.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    </head>
+    <body><div class="container">
+        <script src="{% static 'js/socket.io.js' %}"></script>
+        <script type="text/javascript">
+            function formatDate(date) {
+                var secs = ((new Date()).getTime() - date.getTime()) / 1000;
 
-{% block content %}
-    <script src="{% static 'js/socket.io.js' %}"></script>
-    <script type="text/javascript">
-        function formatDate(date) {
-            var secs = ((new Date()).getTime() - date.getTime()) / 1000;
-
-            if(secs < 15*60) {
-                return 'Live';
-            } else if(secs < 60 * 60) {
-                return Math.round(secs / 60) + 'm ago';
-            } else if(secs < 60 * 60 * 24) {
-                return Math.round(secs / 60 / 60) + 'h ' + Math.round((secs / 60) % 60) + 'm ago';
-            } else {
-                return Math.round(secs / 60 / 60 / 24) + 'd ago';
-            }
-        }
-
-        function getStoredValue(channel) {
-            if(localStorage[channel.channel_id] === undefined) {
-                localStorage[channel.channel_id] = channel.value + '';
-                return channel.value;
-            } else {
-                return parseFloat(localStorage[channel.channel_id]);
-            }
-        }
-
-        function reset(e, channel) {
-            const root = document.querySelector('[data-channel-pk="' + channel + '"]');
-            localStorage.removeItem(channel);
-            root.querySelector('.data-diff').textContent = '0,0';
-        }
-
-        const socket = io('{{ socketio_url|escapejs }}/sbz/flow');
-        socket.on('connect', function() {
-            socket.on('flow', function(data) {
-                for(const channel of data) {
-                    const root = document.querySelector('[data-channel-pk="' + channel.channel_id + '"]');
-                    root.querySelector('.data-channel-name').textContent = channel.channel_name;
-                    root.querySelector('.data-value').textContent = (channel.value.toFixed(1) + '').replace('.', ',');
-                    const date = new Date(channel.first_seen);
-                    const time = root.querySelector('.data-time');
-                    time.dateTime = date.toISOString();
-                    const dateText = formatDate(date);
-                    time.textContent = dateText;
-                    root.querySelector('.data-live').style.display = (dateText == 'Live') ? 'inline' : 'none';
-                    const storedValue = getStoredValue(channel);
-                    root.querySelector('.data-diff').textContent = (channel.value - storedValue).toFixed(1).replace('.', ',');
+                if(secs < 15*60) {
+                    return 'Live';
+                } else if(secs < 60 * 60) {
+                    return Math.round(secs / 60) + 'm ago';
+                } else if(secs < 60 * 60 * 24) {
+                    return Math.round(secs / 60 / 60) + 'h ' + Math.round((secs / 60) % 60) + 'm ago';
+                } else {
+                    return Math.round(secs / 60 / 60 / 24) + 'd ago';
                 }
-            });
-        });
-    </script>
+            }
 
-    {% for channel in channels %}
-        <div class="col-md-6 my2" data-channel-pk="{{ channel.pk }}">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col">
-                            <h1 class="data-channel-name">{{ channel.name }}</h1>
+            function getStoredValue(channel) {
+                if(localStorage[channel.channel_id] === undefined) {
+                    localStorage[channel.channel_id] = channel.value + '';
+                    return channel.value;
+                } else {
+                    return parseFloat(localStorage[channel.channel_id]);
+                }
+            }
+
+            function reset(e, channel) {
+                const root = document.querySelector('[data-channel-pk="' + channel + '"]');
+                localStorage.removeItem(channel);
+                root.querySelector('.data-diff').textContent = '0,0';
+            }
+
+            const socket = io('{{ socketio_url|escapejs }}/sbz/flow');
+            socket.on('connect', function() {
+                socket.on('flow', function(data) {
+                    for(const channel of data) {
+                        const root = document.querySelector('[data-channel-pk="' + channel.channel_id + '"]');
+                        root.querySelector('.data-channel-name').textContent = channel.channel_name;
+                        root.querySelector('.data-value').textContent = (channel.value.toFixed(1) + '').replace('.', ',');
+                        const date = new Date(channel.first_seen);
+                        const time = root.querySelector('.data-time');
+                        time.dateTime = date.toISOString();
+                        const dateText = formatDate(date);
+                        time.textContent = dateText;
+                        root.querySelector('.data-live').style.display = (dateText == 'Live') ? 'inline' : 'none';
+                        const storedValue = getStoredValue(channel);
+                        root.querySelector('.data-diff').textContent = (channel.value - storedValue).toFixed(1).replace('.', ',');
+                    }
+                });
+            });
+        </script>
+
+        <div class="row">
+        {% for channel in channels %}
+            <div class="col-md-6 my-2" data-channel-pk="{{ channel.pk }}">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col">
+                                <h1 class="data-channel-name">{{ channel.name }}</h1>
+                            </div>
+                            <div class="col">
+                                <p class="text-right">
+                                    <time class="data-time">...</time>
+                                    <span class="data-live livedot"></span>
+                                </p>
+                            </div>
                         </div>
-                        <div class="col">
-                            <p class="text-right">
-                                <time class="data-time">...</time>
-                                <span class="data-live livedot"></span>
-                            </p>
-                        </div>
-                    </div>
-                    <h1 class="display-3">
-                        <span class="data-value">{{ channel.value.value }}</span>
-                        <small>ℓ</small>
-                    </h1>
-                    <div class="row">
-                        <div class="col">
-                            <h3 class="text-success">
-                                +
-                                <span class="data-diff">...</span>
-                                <small>ℓ</small>
-                                <button class="btn btn-sm btn-warning" type="button" onclick="reset(event, {{ channel.pk }})">
-                                    Reset
-                                </button>
-                            </h3>
+                        <h1 class="display-3">
+                            <span class="data-value">{{ channel.value.value }}</span>
+                            <small>ℓ</small>
+                        </h1>
+                        <div class="row">
+                            <div class="col">
+                                <h3 class="text-success">
+                                    +
+                                    <span class="data-diff">...</span>
+                                    <small>ℓ</small>
+                                    <button class="btn btn-sm btn-warning" type="button" onclick="reset(event, {{ channel.pk }})">
+                                        Reset
+                                    </button>
+                                </h3>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        {% endfor %}
         </div>
-    {% endfor %}
-{% endblock %}
+    </div></body>
+</html>
