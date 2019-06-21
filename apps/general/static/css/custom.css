@@ -100,3 +100,17 @@ h1.no-margin, h2.no-margin, h3.no-margin, h4.no-margin {
 .location-status-A { background-color: #009900 }
 .location-status-B { background-color: #bbbb00 }
 .location-status-C { background-color: #cc0000 }
+
+@media (max-width: 992px) {
+    .table-sm-rows {
+        display: block;
+    }
+
+    .table-sm-rows tr {
+        display: block;
+    }
+
+    .table-sm-rows td {
+        display: block;
+    }
+}

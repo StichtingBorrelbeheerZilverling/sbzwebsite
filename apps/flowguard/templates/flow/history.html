@@ -19,7 +19,7 @@
             {{ channel.channel.name }}
 
         </h2>
-        <table class="table">
+        <table class="table table-sm-rows">
             {% for week in channel.flows %}
                 <tr>
                     {% for day in week %}
@@ -102,7 +102,6 @@
             if(e.buttons & 1) {
                 e.preventDefault();
                 update(e.target);
-                e.preventDefault();
             }
         }
 
