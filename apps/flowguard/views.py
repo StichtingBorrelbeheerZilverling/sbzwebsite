@@ -74,6 +74,7 @@ from apps.flowguard.models import FlowChannel, FlowValue
 def monitor(request):
     socketio_url = settings.FULL_LIVE_URL_PREFIX
     channels = FlowChannel.objects.all()
+    use_dark_theme = True
     for channel in channels:
         channel.value = FlowValue.objects.filter(channel=channel).order_by("-last_seen").first()
     return render(request, 'flow/monitor.html', locals())
