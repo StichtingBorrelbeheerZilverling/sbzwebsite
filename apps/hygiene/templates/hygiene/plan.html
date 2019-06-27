@@ -13,7 +13,7 @@
     <a href="{% url 'hygiene:ical' user.pk %}">Your calendar (.ics)</a>
     <form action="" method="POST">
         {% csrf_token %}
-        <table>
+        <table class="table table-sm-rows">
             {% for week in weeks %}
                 <tr>
                     {% for form, locations in week %}
