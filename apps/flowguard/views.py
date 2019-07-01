@@ -127,7 +127,10 @@ def history(request, year=None, month=None):
                 week_flows[week][day].date = sbz_location.localize(datetime.combine(dates[week*7+day], time()))
                 week_flows[week][day].hours = []
                 for hour in range(24):
-                    week_flows[week][day].hours.append(0.0)
+                    datum = data()
+                    datum.flow = 0.0
+                    start_time = week_flows[week][day].date + timedelta(hours=hour)
+                    week_flows[week][day].hours.append(datum)
 
         for fr, to in zip(flow_values, flow_values[1:]):
             midpoint = fr.last_seen + (to.first_seen - fr.last_seen) / 2
@@ -136,7 +139,16 @@ def history(request, year=None, month=None):
 
             if midpoint.date() in dates:
                 index = dates.index(midpoint.date())
-                week_flows[index // 7][index % 7].hours[midpoint.hour] += flow
+                week_flows[index // 7][index % 7].hours[midpoint.hour].flow += flow
+
+        current_value = float(flow_values[0].value)
+
+        for week in range(len(dates)//7):
+            for day in range(7):
+                for hour in range(24):
+                    week_flows[week][day].hours[hour].start_value = current_value
+                    current_value += float(week_flows[week][day].hours[hour].flow)
+                    week_flows[week][day].hours[hour].end_value = current_value
 
         datum = data()
         datum.flows = week_flows

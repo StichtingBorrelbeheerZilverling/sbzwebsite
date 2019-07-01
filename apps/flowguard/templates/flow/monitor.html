@@ -6,14 +6,15 @@
         <meta charset="UTF-8">
         <title>SBZ -- Monitor</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.3.1/slate/bootstrap.min.css">
+        <link rel="stylesheet" href="{% static 'css/custom.css' %}">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+        <script src="{% static 'js/jquery.sparkline.min.js' %}"></script>
+        <script src="{% static 'js/socket.io.js' %}"></script>
     </head>
     <body><div class="container">
-        <script src="{% static 'js/socket.io.js' %}"></script>
         <script type="text/javascript">
-            function formatDate(date) {
-                var secs = ((new Date()).getTime() - date.getTime()) / 1000;
-
+            function formatDate(secs) {
                 if(secs < 15*60) {
                     return 'Live';
                 } else if(secs < 60 * 60) {
@@ -41,6 +42,9 @@
             }
 
             const socket = io('{{ socketio_url|escapejs }}/sbz/flow');
+            var sparkline = {};
+            var lastValue = {};
+
             socket.on('connect', function() {
                 socket.on('flow', function(data) {
                     for(const channel of data) {
@@ -50,11 +54,37 @@
                         const date = new Date(channel.first_seen);
                         const time = root.querySelector('.data-time');
                         time.dateTime = date.toISOString();
-                        const dateText = formatDate(date);
+                        const secondDifference = ((new Date()).getTime() - date.getTime()) / 1000;
+                        const dateText = formatDate(secondDifference);
                         time.textContent = dateText;
                         root.querySelector('.data-live').style.display = (dateText == 'Live') ? 'inline' : 'none';
                         const storedValue = getStoredValue(channel);
                         root.querySelector('.data-diff').textContent = (channel.value - storedValue).toFixed(1).replace('.', ',');
+
+                        if(secondDifference > 30*60) {
+                            root.querySelector('.data-sparkline').textContent = '';
+                            lastValue[channel.channel_id] = undefined;
+                            sparkline[channel.channel_id] = undefined;
+                        } else if(lastValue[channel.channel_id] === undefined) {
+                            lastValue[channel.channel_id] = channel.value;
+                        } else {
+                            if(sparkline[channel.channel_id] === undefined) {
+                                sparkline[channel.channel_id] = [];
+                            }
+
+                            sparkline[channel.channel_id].push(channel.value - lastValue[channel.channel_id]);
+                            lastValue[channel.channel_id] = channel.value;
+
+                            if(sparkline[channel.channel_id].length > 60) {
+                                sparkline[channel.channel_id].splice(0, 1);
+                            }
+
+                            $(root.querySelector('.data-sparkline')).sparkline(sparkline[channel.channel_id], {
+                                width: '100%',
+                                height: '40px',
+                                disableTooltips: true,
+                            });
+                        }
                     }
                 });
             });
@@ -90,6 +120,9 @@
                                         Reset
                                     </button>
                                 </h3>
+                            </div>
+                            <div class="col data-sparkline">
+
                             </div>
                         </div>
                     </div>

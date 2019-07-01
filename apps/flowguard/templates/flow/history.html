@@ -11,7 +11,9 @@
         <a href="{% url "flowguard:history_month" next_year next_month %}" class="btn btn-secondary">›</a>
     </h1>
     <p>
-        Selection: <span id="selection">Try dragging across the flow indicators</span>
+        <div id="start">&nbsp;</div>
+        <div id="end">&nbsp;</div>
+        <div id="difference">Try dragging across the flow indicators</div>
     </p>
     {% for channel in channel_values %}
         <h2>
@@ -26,8 +28,10 @@
                         <td class="flow-history-td">
                             <h3 class="{% if day.date.year != year or day.date.month != month %}faded{% endif %}">{{ day.date|date:"D j" }}</h3>
                             <div class="flow-history-values">
-                                {% for hour in day.hours %}<span class="flow-history-value" style="background-color: {{ hour|flow_color }}"
-                                                                 data-value='"{{ hour|escapejs }}"'
+                                {% for hour in day.hours %}<span class="flow-history-value" style="background-color: {{ hour.flow|flow_color }}"
+                                                                 data-value='"{{ hour.flow|escapejs }}"'
+                                                                 data-start-value='"{{ hour.start_value|escapejs }}"'
+                                                                 data-end-value='"{{ hour.end_value|escapejs }}"'
                                                                  draggable="true"
                                                                  data-channel="{{ channel.channel.pk }}" data-date="{{ day.date|date:"D j F" }}" data-hour="{{ forloop.counter0 }}">
 
@@ -49,6 +53,11 @@
             for(let node of document.querySelectorAll('.flow-history-value-select')) node.classList.remove('flow-history-value-select');
 
             if(start.dataset.channel !== end.dataset.channel) return '(invalid range)';
+
+            let left = `${start.dataset.date} ${start.dataset.hour}:00`;
+            let right = `${end.dataset.date} ${end.dataset.hour}:59`;
+            document.querySelector('#start').textContent = `${left}: ${parseFloat(JSON.parse(start.dataset.startValue)).toFixed(1)}`;
+            document.querySelector('#end').textContent = `${right}: ${parseFloat(JSON.parse(end.dataset.endValue)).toFixed(1)}`;
 
             let total = 0.0;
             let node = start;
@@ -78,15 +87,12 @@
 
             end.classList.add('flow-history-value-select-end');
 
-            let left = `${start.dataset.date} ${start.dataset.hour}:00`;
-            let right = `${end.dataset.date} ${end.dataset.hour}:59`;
-
-            return `from ${left} to ${right}: ${total.toFixed(1)}ℓ`;
+            return `Difference: ${total.toFixed(1)}ℓ`;
         }
 
         function update(end) {
             let selectionText = updateRange(currentStart, end);
-            document.querySelector('#selection').textContent = selectionText;
+            document.querySelector('#difference').textContent = selectionText;
         }
 
         function onStart(e) {
