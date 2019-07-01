@@ -18,21 +18,21 @@ from apps.hygiene.models import CheckDay, CheckItem, CheckDayItem, CheckLocation
 
 @login_required
 def check(request, pk=None):
-    obj = CheckDay.objects.filter(date=datetime.date.today()).first() if pk is None else CheckDay.objects.filter(pk=pk).first()
-    check_date = obj.date if obj is not None else datetime.date.today()
-    obj_form = CheckDayCommentsForm(instance=obj, data=request.POST)
+    today = datetime.date.today()
+    post_data = request.POST if request.method == 'POST' else None
+
+    obj = CheckDay.objects.filter(date=today).first() if pk is None else get_object_or_404(CheckDay, pk=pk)
+    check_date = obj.date if obj is not None else today
+    obj_form = CheckDayCommentsForm(instance=obj, data=post_data)
 
     if request.method == 'POST':
         if obj_form.is_valid():
-            if obj is None:
-                obj = obj_form.save(commit=False)
+            obj = obj_form.save(commit=False)
+            if obj.date is None:
                 obj.date = check_date
+            if obj.checker_id is None or obj.checker != request.user:
                 obj.checker = request.user
-            elif obj.checker != request.user:
-                obj = obj_form.save(commit=False)
-                obj.checker = request.user
-            else:
-                obj = obj_form.save()
+            obj.save()
 
     items = CheckDayItem.objects.filter(day=obj)
     items = {item.item.pk: item for item in items}
@@ -45,7 +45,7 @@ def check(request, pk=None):
         location.items = CheckItem.objects.filter(location=location).all()
         for item in location.items:
             instance = items.get(item.pk, None)
-            data = request.POST if request.method == 'POST' else None
+            data = post_data
             initial_result = data.get(str(item.pk) + '-result', None) if data else None
             if instance and initial_result is None: initial_result = instance.result
             initial = {'result': initial_result}
