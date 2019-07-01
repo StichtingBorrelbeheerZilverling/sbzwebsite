@@ -169,9 +169,9 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     def _create_missing_objects(self, data):
         for customer in data['drinks'].keys():
             if not Customer.objects.filter(alexia_name=customer).exists():
-                customer = Customer()
-                customer.alexia_name = customer
-                customer.save()
+                customer_obj = Customer()
+                customer_obj.alexia_name = customer
+                customer_obj.save()
 
         for product_id, product_name in data['products'].items():
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
