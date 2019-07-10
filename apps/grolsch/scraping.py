@@ -8,8 +8,8 @@ from settings import DE_KLOK_EMAIL, DE_KLOK_PASSWORD
 
 
 class DeKlok:
-    LOGIN_FORM_URL = "https://www.deklokdranken.nl/"
-    PRICES_URL = "https://www.deklokdranken.nl/erpprice/index/list"
+    LOGIN_FORM_URL = "https://www.deklokdranken.nl/account/login?returnUrl=/"
+    PRICES_URL = "https://www.deklokdranken.nl/storefrontapi/de_klok/price_and_stock"
 
     def __init__(self):
         self.session = requests.Session()
@@ -17,17 +17,16 @@ class DeKlok:
         form_response = self.session.get(DeKlok.LOGIN_FORM_URL)
         form_soup = BeautifulSoup(form_response.text, "html.parser")
 
-        login_url = form_soup.find(id="login-form-modal")['action']
-        csrf_token = form_soup.find(id="login-form-modal").find(attrs={'name': 'form_key'})['value']
+        login_url = form_soup.find(id="customer_login")['action']
+        csrf_token = form_soup.find(id="customer_login").find(attrs={'name': '__RequestVerificationToken'})['value']
 
         email = DE_KLOK_EMAIL
         password = DE_KLOK_PASSWORD
 
         self.session.post(login_url, data={
-            'form_key': csrf_token,
-            'login[username]': email,
-            'login[password]': password,
-            'send': ''
+            '__RequestVerificationToken': csrf_token,
+            'customer[user_name]': email,
+            'customer[password]': password,
         })
 
     def get_pid_by_url(self, product_url):
@@ -49,9 +48,9 @@ class DeKlok:
         header = soup.find(attrs={'class': 'page-title product-name'}).find('h1')
         return header.get_text()
 
-    def get_product_prices(self, pids):
-        response = self.session.post(DeKlok.PRICES_URL, data={
-            'pids': json.dumps(pids),
-        })
+    def get_product_prices(self, skus):
+        response = self.session.post(DeKlok.PRICES_URL, json=[
+            {'sku': sku, 'quantity': 1} for sku in skus
+        ])
 
         return response.json()

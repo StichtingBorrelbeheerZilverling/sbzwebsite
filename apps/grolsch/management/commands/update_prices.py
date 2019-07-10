@@ -1,3 +1,4 @@
+import math
 from django.core import mail
 from django.core.management import BaseCommand
 
@@ -12,13 +13,13 @@ class Command(BaseCommand):
         UnresolvedPriceChange.objects.all().delete()
 
         products = Product.objects.filter(price_track_id__isnull=False).all()
-        pids = list(products.values_list('price_track_id', flat=True))
+        skus = list(products.values_list('grolsch_article_no', flat=True))
 
         klok = DeKlok()
-        prices = klok.get_product_prices(pids)
+        prices = klok.get_product_prices(skus)
 
-        for product in products:
-            price = Product.str_to_cents(prices[product.price_track_id]['price'])
+        for product, price in zip(products, prices['result']):
+            price = int(round(100*price['price']))
 
             if product.last_price != price and product.last_discount_price != price:
                 change = UnresolvedPriceChange()
