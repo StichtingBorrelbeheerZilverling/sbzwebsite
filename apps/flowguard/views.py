@@ -61,9 +61,9 @@ def update(request):
 
     # new_values = FlowValue.objects.values('channel').annotate(max_date=Max('last_seen'))
 
-    with SocketIO(settings.FULL_LIVE_URL_HOST, settings.FULL_LIVE_URL_PORT, BaseNamespace) as bare_socket:
-        socket = bare_socket.define(BaseNamespace, '/sbz/flow')
-        socket.emit('update_flow', {'secret': settings.UPDATE_FLOW_SECRET, 'data': updates})
+    #with SocketIO(settings.FULL_LIVE_URL_HOST, settings.FULL_LIVE_URL_PORT, BaseNamespace) as bare_socket:
+    #    socket = bare_socket.define(BaseNamespace, '/sbz/flow')
+    #    socket.emit('update_flow', {'secret': settings.UPDATE_FLOW_SECRET, 'data': updates})
 
     return HttpResponse()
 
