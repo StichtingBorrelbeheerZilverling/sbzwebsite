@@ -8,7 +8,7 @@ from settings import DE_KLOK_EMAIL, DE_KLOK_PASSWORD
 
 
 class DeKlok:
-    LOGIN_FORM_URL = "https://www.deklokdranken.nl/account/login?returnUrl=/"
+    LOGIN_FORM_URL = "https://www.deklokdranken.nl/account/login"
     PRICES_URL = "https://www.deklokdranken.nl/storefrontapi/de_klok/price_and_stock"
 
     def __init__(self):
@@ -50,7 +50,7 @@ class DeKlok:
 
     def get_product_prices(self, skus):
         response = self.session.post(DeKlok.PRICES_URL, json=[
-            {'sku': sku, 'quantity': 1} for sku in skus
+            {'measureUnit': 'KR', 'sku': sku, 'quantity': 1} for sku in skus
         ])
 
         return response.json()
