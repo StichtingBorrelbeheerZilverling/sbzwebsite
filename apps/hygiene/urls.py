@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from apps.hygiene import views
 
+app_name = 'hygiene'
+
 urlpatterns = [
     url('^check/$', views.check, name='check'),
     url('^check/(?P<pk>[0-9]+)/$', views.check, name='check_day'),

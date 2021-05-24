@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from . import views
 
+app_name = 'multivers'
+
 urlpatterns = [
     url(r'^$', view=views.Index.as_view(), name='index'),
     url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveCode.as_view(), name='code'),

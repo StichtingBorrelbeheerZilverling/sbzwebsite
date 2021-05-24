@@ -103,7 +103,7 @@ class Location(models.Model):
 
 class ConceptOrder(models.Model):
     date = models.DateField()
-    customer = models.ForeignKey("multivers.Customer")
+    customer = models.ForeignKey("multivers.Customer", on_delete=models.PROTECT)
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -147,7 +147,7 @@ class ConceptOrder(models.Model):
 
 
 class ConceptOrderDrink(models.Model):
-    order = models.ForeignKey("multivers.ConceptOrder")
+    order = models.ForeignKey("multivers.ConceptOrder", on_delete=models.PROTECT)
     date = models.DateField()
     name = models.CharField(max_length=255)
     locations = models.ManyToManyField("multivers.Location")
@@ -182,8 +182,8 @@ class ConceptOrderDrink(models.Model):
 
 
 class ConceptOrderDrinkLine(models.Model):
-    drink = models.ForeignKey("multivers.ConceptOrderDrink")
-    product = models.ForeignKey("multivers.Product")
+    drink = models.ForeignKey("multivers.ConceptOrderDrink", models.CASCADE)
+    product = models.ForeignKey("multivers.Product", models.PROTECT)
     amount = models.FloatField()
 
     def __str__(self):

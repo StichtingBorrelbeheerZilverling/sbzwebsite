@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from . import views
 
+app_name = 'general'
+
 urlpatterns = [
     url(r'^$', view=views.index, name='index'),
     url(r'^construction/', view=views.construction, name='construction'),

@@ -50,7 +50,7 @@ class Product(models.Model):
 
 
 class UnresolvedPriceChange(models.Model):
-    product = models.ForeignKey("grolsch.Product")
+    product = models.ForeignKey("grolsch.Product", on_delete=models.CASCADE)
     new_price = models.PositiveIntegerField()
 
     @property

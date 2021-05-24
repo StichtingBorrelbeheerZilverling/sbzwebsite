@@ -1,6 +1,8 @@
 from django.conf.urls import url
 from . import views
 
+app_name = 'grolsch'
+
 urlpatterns = [
     url('^products$', views.ProductList.as_view(), name='products'),
     url('^product/create$', views.ProductCreate.as_view(), name='product_create'),

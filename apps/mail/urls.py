@@ -2,6 +2,8 @@ from django.conf.urls import url
 
 from apps.mail import views
 
+app_name = 'mail'
+
 urlpatterns = [
     url('^$', view=views.index, name='index'),
     url('^sync/$', view=views.sync, name='sync'),
