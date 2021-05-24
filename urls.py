@@ -5,12 +5,12 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^multivers/', include('apps.multivers.urls', namespace='multivers')),
-    url(r'^grolsch/', include('apps.grolsch.urls', namespace='grolsch')),
-    url(r'^mail/', include('apps.mail.urls', namespace='mail')),
-    url(r'^flow/', include('apps.flowguard.urls', namespace='flowguard')),
-    url(r'^hygiene/', include('apps.hygiene.urls', namespace='hygiene')),
-    url(r'^', include('apps.general.urls', namespace='general')),
+    url(r'^multivers/', include('apps.multivers.urls')),
+    url(r'^grolsch/', include('apps.grolsch.urls')),
+    url(r'^mail/', include('apps.mail.urls')),
+    url(r'^flow/', include('apps.flowguard.urls')),
+    url(r'^hygiene/', include('apps.hygiene.urls')),
+    url(r'^', include('apps.general.urls')),
 ]
 
 

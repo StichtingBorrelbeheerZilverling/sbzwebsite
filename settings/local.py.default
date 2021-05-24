@@ -1,4 +1,5 @@
 # Example of local settings, imported by __init__.py
+from .default import *
 
 # Debug aan voor lokaal
 DEBUG = True
