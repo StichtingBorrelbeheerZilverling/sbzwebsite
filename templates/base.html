@@ -67,9 +67,6 @@
                             </li>
                         </ul>
                     </li>
-                    <li class="nav-item {% if active_id == "mail" %}active{% endif %}">
-                        <a href="{% url 'mail:index' %}" class="nav-link">{% trans 'Mail' %}</a>
-                    </li>
                     <li class="dropdown {% if active_id == "flow" %}active{% endif %}">
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
                             {% trans 'FlowGuard' %}
@@ -81,8 +78,6 @@
                                     {% trans 'Monitor' %}
                                     <span class="oi oi-external-link float-right"></span>
                                 </a>
-                                <a href="{% url 'flowguard:stats' %}" class="dropdown-item">{% trans 'Stats' %}</a>
-                                <a href="{% url 'flowguard:lookup' %}" class="dropdown-item">{% trans 'Lookup' %}</a>
                                 <a href="{% url 'flowguard:history' %}" class="dropdown-item">{% trans 'History' %}</a>
                             </li>
                         </ul>
