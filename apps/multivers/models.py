@@ -147,7 +147,7 @@ class ConceptOrder(models.Model):
 
 
 class ConceptOrderDrink(models.Model):
-    order = models.ForeignKey("multivers.ConceptOrder", on_delete=models.PROTECT)
+    order = models.ForeignKey("multivers.ConceptOrder", on_delete=models.CASCADE)
     date = models.DateField()
     name = models.CharField(max_length=255)
     locations = models.ManyToManyField("multivers.Location")
