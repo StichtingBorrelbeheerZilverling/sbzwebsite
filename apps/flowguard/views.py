@@ -72,7 +72,7 @@ from apps.flowguard.models import FlowChannel, FlowValue
 
 
 def monitor(request):
-    socketio_url = settings.FULL_LIVE_URL_PREFIX
+    socketio_url = "https://sbz.utwente.nl"
     channels = FlowChannel.objects.all()
     use_dark_theme = True
     for channel in channels:
