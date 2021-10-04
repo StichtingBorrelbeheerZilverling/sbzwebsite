@@ -65,9 +65,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'urls'
 
-CORS_ALLOWED_ORIGINS = [
-    "https://sbz.utwente.nl",
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
