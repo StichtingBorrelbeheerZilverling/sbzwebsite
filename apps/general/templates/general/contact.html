@@ -2,51 +2,51 @@
 
 {% load i18n %}
 
-{% block title %}{% trans 'SBZ -- Contact' %}{% endblock %}
+{% block title %}SBZ -- Contact{% endblock %}
 
 {% block content %}
-    <header>
-        <h1>Contactinformatie</h1>
-    </header>
+<header>
+    <h1>Contact information</h1>
+</header>
 
-    <h2>Postadres</h2>
+<h2>Postal address</h2>
 
-    <p>
-        Postbus 217</br>
-        7500 AE Enschede</br>
-        Email: <a href="mailto:overleg@sbz.utwente.nl">overleg@sbz.utwente.nl</a></br>
-        </br>
-        Voor dringende vragen kunt u telefonisch contact opnemen met Studievereniging Inter-<i>Actief</i></br>
-        Tel.: (053) 489 3756</br>
-        </br>
-    </p>
+<p>
+    P.O. box 217</br>
+    7500 AE Enschede</br>
+    Email: <a href="mailto:overleg@sbz.utwente.nl">overleg@sbz.utwente.nl</a></br>
+    </br>
+    For urgent questions, you can contact Study association Inter-<i>Actief</i></br>
+    Tel.: (053) 489 3756</br>
+    </br>
+</p>
 
-    <h2>Bezoekadres</h2>
+<h2>Visiting address</h2>
 
-    <p>
-        Universiteit Twente</br>
-        Zilverling, kamer E102 & E104</br>
-        Drienerlolaan 5</br>
-        7522 NB Enschede</br>
-    </p>
+<p>
+    University of Twente</br>
+    Zilverling, room E102 & E104</br>
+    Drienerlolaan 5</br>
+    7522 NB Enschede</br>
+</p>
 
-    <h2>Routebeschrijving</h2>
-    <div id="map" style="width:60%;height:350px;margin-left:20px"></div>
-    <script>
-        function myMap() {
-            var mapCanvas = document.getElementById("map");
-            var mapOptions = {
-                center: new google.maps.LatLng(52.239133, 6.856078),
-                zoom: 17
-            };
-            var map = new google.maps.Map(mapCanvas, mapOptions);
-        }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?callback=myMap"></script>
+<h2>Route</h2>
+<div id="map" style="width:60%;height:350px;margin-left:20px"></div>
+<script>
+    function myMap() {
+        var mapCanvas = document.getElementById("map");
+        var mapOptions = {
+            center: new google.maps.LatLng(52.239133, 6.856078),
+            zoom: 17
+        };
+        var map = new google.maps.Map(mapCanvas, mapOptions);
+    }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?callback=myMap"></script>
 
-    <h2>Openingstijden</h2>
-    <p>
-        Wij hebben geen vaste openingstijden. Voor het maken van een afspraak kunt u mailen naar <a
-            href="mailto:overleg@sbz.utwente.nl">overleg@sbz.utwente.nl</a>.
-    </p>
+<h2>Opening times</h2>
+<p>
+    We do not have specific opening times. For visiting us, you can make an appointment via <a
+        href="mailto:overleg@sbz.utwente.nl">overleg@sbz.utwente.nl</a>.
+</p>
 {% endblock %}

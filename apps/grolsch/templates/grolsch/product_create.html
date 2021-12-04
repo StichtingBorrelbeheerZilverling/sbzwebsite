@@ -6,7 +6,7 @@
     <form action="" method="POST">
         {% csrf_token %}
         {{ form|bootstrap_form }}
-        <a href="{% url 'grolsch:products' %}" class="btn btn-secondary">{% trans 'Back' %}</a>
-        <input type="submit" class="btn btn-primary" value="{% trans 'Create' %}">
+        <a href="{% url 'grolsch:products' %}" class="btn btn-secondary">Back</a>
+        <input type="submit" class="btn btn-primary" value="Create">
     </form>
 {% endblock %}
