@@ -34,62 +34,62 @@
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="nav navbar-nav mr-auto">
                 <li class="nav-item {% if active_id == "home" %}active{% endif %}">
-                    <a class="nav-link" href="{% url 'general:index' %}">{% trans 'Home' %}</a>
+                    <a class="nav-link" href="{% url 'general:index' %}">Home</a>
                 </li>
                 <li class="nav-item {% if active_id == "construction" %}active{% endif %}">
-                    <a class="nav-link" href="{% url 'general:construction' %}">{% trans 'Construction' %}</a>
+                    <a class="nav-link" href="{% url 'general:construction' %}">Structure</a>
                 </li>
                 <li class="nav-item {% if active_id == "contact" %}active{% endif %}">
-                    <a class="nav-link" href="{% url 'general:contact' %}">{% trans 'Contact' %}</a>
+                    <a class="nav-link" href="{% url 'general:contact' %}">Contact</a>
                 </li>
                 {% if user.is_authenticated %}
                     <li class="dropdown {% if active_id == "multivers" %}active{% endif %}">
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
-                            {% trans 'Multivers' %}
+                            Multivers
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="{% url 'multivers:products' %}" class="dropdown-item">{% trans 'Products' %}</a>
-                                <a href="{% url 'multivers:index' %}" class="dropdown-item">{% trans 'Sales' %}</a>
+                                <a href="{% url 'multivers:products' %}" class="dropdown-item">Products</a>
+                                <a href="{% url 'multivers:index' %}" class="dropdown-item">Sales</a>
                             </li>
                         </ul>
                     </li>
                     <li class="dropdown {% if active_id == "grolsch" %}active{% endif %}">
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
-                            {% trans 'Grolsch' %}
+                            Grolsch
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="{% url 'grolsch:products' %}" class="dropdown-item">{% trans 'Products' %}</a>
-                                <a href="{% url 'grolsch:price_changes' %}" class="dropdown-item">{% trans 'Price changes' %}</a>
+                                <a href="{% url 'grolsch:products' %}" class="dropdown-item">Products</a>
+                                <a href="{% url 'grolsch:price_changes' %}" class="dropdown-item">Price changes</a>
                             </li>
                         </ul>
                     </li>
                     <li class="dropdown {% if active_id == "flow" %}active{% endif %}">
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
-                            {% trans 'FlowGuard' %}
+                            FlowGuard
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
                             <li>
                                 <a href="{% url 'flowguard:monitor' %}" class="dropdown-item" target="_blank">
-                                    {% trans 'Monitor' %}
+                                    Monitor
                                     <span class="oi oi-external-link float-right"></span>
                                 </a>
-                                <a href="{% url 'flowguard:history' %}" class="dropdown-item">{% trans 'History' %}</a>
+                                <a href="{% url 'flowguard:history' %}" class="dropdown-item">History</a>
                             </li>
                         </ul>
                     </li>
                     <li class="dropdown {% if active_id == "hygiene" %}active{% endif %}">
                         <a href="" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
-                            {% trans 'Hygiene' %}
+                            Hygiene
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a href="{% url 'hygiene:check' %}" class="dropdown-item">{% trans 'Check Today' %}</a>
-                                <a href="{% url 'hygiene:plan' %}" class="dropdown-item">{% trans 'Planning' %}</a>
+                                <a href="{% url 'hygiene:check' %}" class="dropdown-item">Check Today</a>
+                                <a href="{% url 'hygiene:plan' %}" class="dropdown-item">Planning</a>
                             </li>
                         </ul>
                     </li>
@@ -101,7 +101,7 @@
                         {% if user.is_authenticated %}
                             {{ user.first_name }}
                         {% else %}
-                            {% trans 'Login' %}
+                            Login
                         {% endif %}
                         <span class="caret"></span>
                     </a>
@@ -109,7 +109,7 @@
                         <ul class="dropdown-menu dropdown-menu-right">
                             <li>
                                 <a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a>
-                                <a class="dropdown-item" href="#" onclick="$('#logout').submit();">{% trans 'Logout' %}</a>
+                                <a class="dropdown-item" href="#" onclick="$('#logout').submit();">Logout</a>
                             </li>
                         </ul>
                     {% else %}

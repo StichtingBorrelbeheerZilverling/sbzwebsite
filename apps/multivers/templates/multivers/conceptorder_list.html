@@ -3,9 +3,9 @@
 
 {% block content %}
     {% if new_products or new_customers or new_locations %}
-    <h1>{% trans 'Unresolved issues' %}</h1>
+    <h1>Unresolved issues</h1>
     <p>
-        {% trans 'Please resolve the following issues before sending any pending orders:' %}
+        Please resolve the following issues before sending any pending orders:
     </p>
     <ul>
     {% for product in new_products %}
@@ -36,7 +36,7 @@
     {% endif %}
 
     <h1>
-        {% trans 'Pending concept orders' %}
+        Pending concept orders
     </h1>
 
     <p>
