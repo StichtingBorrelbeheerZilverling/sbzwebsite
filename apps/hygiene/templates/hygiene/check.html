@@ -2,14 +2,14 @@
 
 {% load i18n bootstrap_form %}
 
-{% block title %}{% trans 'SBZ -- Hygiene Check' %}{% endblock %}
+{% block title %}SBZ -- Hygiene Check{% endblock %}
 
 {% block content %}
     <h1>{{ check_date }}</h1>
 
     {% if obj.checker != user %}
         <div class="alert alert-warning" role="alert">
-            {% trans 'You are not assigned to check today, you will be assigned automatically on save.' %}
+            You are not assigned to check today, you will be assigned automatically on save.
         </div>
     {% endif %}
 
@@ -37,6 +37,6 @@
 
         {{ obj_form|bootstrap_form }}
 
-        <input type="submit" value="{% trans 'Save' %}" class="btn btn-primary">
+        <input type="submit" value="Save" class="btn btn-primary">
     </form>
 {% endblock %}
