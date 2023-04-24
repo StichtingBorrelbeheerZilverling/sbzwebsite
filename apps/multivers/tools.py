@@ -131,7 +131,7 @@ class MultiversOrder:
 
 
 class Multivers:
-    BASE_URL = "https://api.online.unit4.nl/V22/"
+    BASE_URL = "https://api.multivers.nl/V22/"
     EXPIRE_MARGIN = 5*60 # seconds
 
     def __init__(self, request, client_id=None, client_secret=None):
