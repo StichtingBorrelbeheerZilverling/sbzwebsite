@@ -27,7 +27,6 @@ class Command(BaseCommand):
                 change.new_price = price
                 change.save()
 
-                change.mail()
             elif product.last_price == price:
                 product.last_discount_price = None
                 product.save()
