@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
+
 {% load i18n %}
+{% load static %}
 
 {% block title %}SBZ -- Frontpage{% endblock %}
 
@@ -22,5 +24,8 @@
 <p>The drinks that will take place in the near future can be found on <a href="http://alex.ia.utwente.nl">Alexia</a>.
     For organizing a drink, for example a graduation drink, you can contact one of the study associations.
 </p>
+
+<p>The current Craft Beer of the Month:</p>
+<img src="{% static 'images/SBZ_Logo_Gekleurd.png' %}" alt="CBOTM">
 
 {% endblock %}
