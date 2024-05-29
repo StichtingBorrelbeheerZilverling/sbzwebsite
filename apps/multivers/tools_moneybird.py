@@ -57,7 +57,7 @@ class MoneybirdOrder:
         return {
             "contact_id": self.contact_id,
             "reference": self.reference,
-            "prices_are_incl_tax": self.customer_vat_type,
+            # "prices_are_incl_tax": self.customer_vat_type,  # Currently not supported
             "details_attributes": lines,
         }
 
