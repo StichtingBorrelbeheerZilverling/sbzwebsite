@@ -12,12 +12,13 @@ from django.views.generic import FormView, ListView, DeleteView, CreateView
 from django.views.generic import UpdateView
 from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
+from moneybird import MoneyBird, TokenAuthentication
 
 from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
-from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
+from apps.multivers.tools_multivers import Multivers, MultiversOrderLine, MultiversOrder
 from apps.util.profiling import profile
-from . import tools
+from . import tools_multivers
 from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 
@@ -226,16 +227,29 @@ class OrdersSendAllView(LoginRequiredMixin, FormView):
     form_class = SendOrdersForm
 
     def form_valid(self, form):
-        multivers, do_redirect = Multivers.instantiate_or_redirect(self.request)
-        if do_redirect: return do_redirect
+        bookkeeping = Settings.get("bookkeeping_handler")
+        if bookkeeping == "multivers":
+            multivers, do_redirect = Multivers.instantiate_or_redirect(self.request)
+            if do_redirect: return do_redirect
 
-        admin = Settings.get('db')
+            admin = Settings.get('db')
 
-        orders = ConceptOrder.objects.all()
+            orders = ConceptOrder.objects.all()
 
-        for order in orders:
-            multivers_order = order.as_multivers(revenue_account=form.cleaned_data['override_revenue_account'])
-            multivers.create_order(administration=admin, order=multivers_order)
+            for order in orders:
+                multivers_order = order.as_multivers(revenue_account=form.cleaned_data['override_revenue_account'])
+                multivers.create_order(administration=admin, order=multivers_order)
+        elif bookkeeping == "moneybird":
+            moneybird = MoneyBird(TokenAuthentication(Settings.get("moneybird_token")))
+            administrations = moneybird.get('administrations')
+            administration = administrations[0]['id']
+
+            orders = ConceptOrder.objects.all()
+
+            for order in orders:
+                moneybird_order = order.as_moneybird()
+                moneybird.post('sales_invoices', {'sales_invoice': moneybird_order}, administration)
+
 
         return redirect('multivers:index')
 
