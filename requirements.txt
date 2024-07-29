@@ -13,3 +13,5 @@ icalendar>=5.0,<6
 
 Flask>=3.0,<4
 Flask-SocketIO>=5.3,<6
+
+uwsgi>=2.0,<3.0

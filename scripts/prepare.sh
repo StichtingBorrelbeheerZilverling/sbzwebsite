@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "Preparing to run FIASCO..."
+echo "Preparing to run SBZ Website..."
 
 # Make sure staticfiles are collected into the static volume
 echo "Collecting static files..."
