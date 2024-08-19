@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class UtilConfig(AppConfig):
-    name = 'util'
+    name = 'apps.util'
