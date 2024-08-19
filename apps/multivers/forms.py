@@ -2,9 +2,10 @@ import json
 from datetime import datetime
 
 from django.core.cache import cache
-from django.forms import forms, ModelForm, ChoiceField, HiddenInput, MultipleChoiceField, ModelMultipleChoiceField, \
+from django.forms import ModelForm, ChoiceField, HiddenInput, MultipleChoiceField, ModelMultipleChoiceField, \
     Form, CharField
 from django.utils.functional import cached_property
+from django import forms
 
 from apps.multivers import tools
 from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
