@@ -4,4 +4,4 @@ from django.apps import AppConfig
 
 
 class GrolschConfig(AppConfig):
-    name = 'grolsch'
+    name = 'apps.grolsch'
