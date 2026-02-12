@@ -7,7 +7,7 @@ from django.forms import ModelForm, ChoiceField, HiddenInput, MultipleChoiceFiel
 from django.utils.functional import cached_property
 from django import forms
 
-from apps.multivers import tools
+from apps.multivers import tools_multivers
 from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
 from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 
@@ -110,7 +110,7 @@ class FileForm(forms.Form):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'margin']
+        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'moneybird_id', 'moneybird_name', 'margin']
 
 
 class ConceptOrderDrinkForm(ModelForm):
