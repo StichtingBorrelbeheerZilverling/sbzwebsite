@@ -2,7 +2,7 @@ import json
 import time
 import traceback
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from json import JSONDecodeError
 from urllib import parse
 
@@ -147,7 +147,7 @@ class Multivers:
         expires_in = Settings.get("expires_in")
 
         if acquired and expires_in:
-            self.access_token_expiry = datetime.fromtimestamp(float(acquired)) \
+            self.access_token_expiry = datetime.fromtimestamp(float(acquired), tz=timezone.utc) \
                                        + timedelta(seconds=int(expires_in)-Multivers.EXPIRE_MARGIN)
         else:
             self.access_token_expiry = None
@@ -184,7 +184,7 @@ class Multivers:
 
         self.refresh_token = data['refresh_token']
         self.access_token = data['access_token']
-        self.access_token_expiry = datetime.utcnow() + timedelta(seconds=int(data['expires_in'])-Multivers.EXPIRE_MARGIN)
+        self.access_token_expiry = datetime.now(tz=timezone.utc) + timedelta(seconds=int(data['expires_in'])-Multivers.EXPIRE_MARGIN)
 
         Settings.set('refresh_token', self.refresh_token)
         Settings.set('access_token', self.access_token)
@@ -192,7 +192,7 @@ class Multivers:
         Settings.set('access_token_acquired', str(time.time()))
 
     def _auth(self):
-        now = datetime.now()
+        now = datetime.now(tz=timezone.utc)
 
         if self.access_token and self.access_token_expiry > now:
             pass
