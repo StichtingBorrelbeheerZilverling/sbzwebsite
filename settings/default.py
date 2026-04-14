@@ -40,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 
     'apps.util.apps.UtilConfig',
     'apps.general.apps.GeneralConfig',
     'apps.multivers.apps.MultiversConfig',
+    'apps.moneybird.apps.MoneybirdConfig',
     'apps.grolsch.apps.GrolschConfig',
     'apps.mail.apps.MailConfig',
     'apps.flowguard',

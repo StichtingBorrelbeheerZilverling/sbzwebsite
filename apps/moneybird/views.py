@@ -10,15 +10,15 @@ from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views.generic import FormView, ListView, DeleteView, CreateView
 from django.views.generic import UpdateView
-from django.views.generic.base import RedirectView, View
+from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
+from moneybird import MoneyBird, TokenAuthentication
 
-from apps.multivers.defaults import make_orderline, make_order
-from apps.multivers.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
-from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
+from apps.moneybird.defaults import make_orderline, make_order
+from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
+from apps.moneybird.tools_moneybird import Moneybird, MoneybirdOrderLine, MoneybirdOrder
 from apps.util.profiling import profile
-from . import tools
-from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
+from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 
 class Index(LoginRequiredMixin, ListView):
@@ -30,9 +30,8 @@ class Index(LoginRequiredMixin, ListView):
         context['send_form'] = SendOrdersForm()
         context['create_order_form'] = FileForm()
 
-        context['new_products'] = Product.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
-        context['new_customers'] = Customer.objects.filter(Q(multivers_id__isnull=True) | Q(multivers_id__exact=""))
-        context['new_locations'] = Location.objects.filter(no_discount__isnull=True)
+        context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
+        context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
 
         return context
 
@@ -46,7 +45,7 @@ class SaveCode(LoginRequiredMixin, RedirectView):
         return super(SaveCode, self).dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, *args, **kwargs):
-        return reverse('multivers:index')
+        return reverse('moneybird:index')
 
 
 class ConceptOrderView(LoginRequiredMixin, DetailView):
@@ -95,7 +94,7 @@ class ConceptOrderDrinkCreateView(LoginRequiredMixin, CreateView):
         return super(ConceptOrderDrinkCreateView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.order.pk})
 
 
 class ConceptOrderDrinkEditView(LoginRequiredMixin, UpdateView):
@@ -108,14 +107,14 @@ class ConceptOrderDrinkEditView(LoginRequiredMixin, UpdateView):
         return ctx
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.order.pk})
 
 
 class ConceptOrderDrinkDeleteView(LoginRequiredMixin, DeleteView):
     model = ConceptOrderDrink
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.order.pk})
 
 
 class ConceptOrderDrinkLineCreateView(LoginRequiredMixin, CreateView):
@@ -138,7 +137,7 @@ class ConceptOrderDrinkLineCreateView(LoginRequiredMixin, CreateView):
         return super(ConceptOrderDrinkLineCreateView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.drink.order.pk})
 
 
 class ConceptOrderDrinkLineEditView(LoginRequiredMixin, UpdateView):
@@ -151,20 +150,20 @@ class ConceptOrderDrinkLineEditView(LoginRequiredMixin, UpdateView):
         return ctx
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.drink.order.pk})
 
 
 class ConceptOrderDrinkLineDeleteView(LoginRequiredMixin, DeleteView):
     model = ConceptOrderDrinkLine
 
     def get_success_url(self):
-        return reverse('multivers:order_view', kwargs={'pk': self.object.drink.order.pk})
+        return reverse('moneybird:order_view', kwargs={'pk': self.object.drink.order.pk})
 
 
 class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     form_class = FileForm
-    template_name = 'multivers/file_upload.html'
-    success_url = reverse_lazy('multivers:index')
+    template_name = 'moneybird/file_upload.html'
+    success_url = reverse_lazy('moneybird:index')
 
     def _create_missing_objects(self, data):
         for customer in data['drinks'].keys():
@@ -177,19 +176,6 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
             product.alexia_name = product_name
             product.save()
-
-        alexia_locations = set()
-
-        for drinks in data['drinks'].values():
-            for drink in drinks:
-                for location in drink['location']:
-                    alexia_locations.add(location)
-
-        for alexia_location in alexia_locations:
-            if not Location.objects.filter(name=alexia_location).exists():
-                location = Location()
-                location.name = alexia_location
-                location.save()
 
     def form_valid(self, form):
         data = form.cleaned_json
@@ -210,7 +196,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
                 order_drink.save()
 
                 for location in drink['location']:
-                    order_drink.locations.add(Location.objects.get(name=location))
+                    order_drink.locations.add(location)
 
                 for product_id, quantity in drink['products'].items():
                     order_drink_line = ConceptOrderDrinkLine()
@@ -224,48 +210,57 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 class OrdersSendAllView(LoginRequiredMixin, FormView):
     form_class = SendOrdersForm
+    
+    #TODO Fix that only Moneybird API is used
 
     def form_valid(self, form):
-        multivers, do_redirect = Multivers.instantiate_or_redirect(self.request)
-        if do_redirect: return do_redirect
+        bookkeeping = Settings.get("bookkeeping_handler")
+        if bookkeeping == "moneybird":
+            moneybird, do_redirect = Moneybird.instantiate_or_redirect(self.request)
+            if do_redirect: return do_redirect
 
-        admin = Settings.get('db')
+            admin = Settings.get('db')
 
-        orders = ConceptOrder.objects.all()
+            orders = ConceptOrder.objects.all()
 
-        for order in orders:
-            multivers_order = order.as_multivers(revenue_account=form.cleaned_data['override_revenue_account'])
-            multivers.create_order(administration=admin, order=multivers_order)
+            for order in orders:
+                moneybird_order = order.as_moneybird(revenue_account=form.cleaned_data['override_revenue_account'])
+                moneybird.create_order(administration=admin, order=moneybird_order)
+        elif bookkeeping == "moneybird":
+            moneybird = MoneyBird(TokenAuthentication(Settings.get("moneybird_token")))
+            administrations = moneybird.get('administrations')
+            administration = administrations[0]['id']
 
-        return redirect('multivers:index')
+            orders = ConceptOrder.objects.all()
+
+            for order in orders:
+                moneybird_order = order.as_moneybird()
+                moneybird.post('sales_invoices', {'sales_invoice': moneybird_order}, administration)
+
+
+        return redirect('moneybird:index')
 
 
 class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
     model = ConceptOrder
-    success_url = reverse_lazy('multivers:index')
+    success_url = reverse_lazy('moneybird:index')
 
 
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
     model = Customer
-    success_url = reverse_lazy('multivers:index')
-    fields = '__all__'
-
-
-class LocationUpdate(LoginRequiredMixin, UpdateView):
-    model = Location
-    success_url = reverse_lazy('multivers:index')
+    success_url = reverse_lazy('moneybird:index')
     fields = '__all__'
 
 
 class SettingsUpdate(LoginRequiredMixin, UpdateView):
     model = Settings
-    success_url = reverse_lazy('multivers:index')
+    success_url = reverse_lazy('moneybird:index')
     fields = '__all__'
 
 
 class Products(LoginRequiredMixin, ListView):
     model = Product
-    ordering = ['multivers_id']
+    ordering = ['moneybird_id']
 
     def get_context_data(self, **kwargs):
         ctx = super(Products, self).get_context_data(**kwargs)
@@ -280,31 +275,32 @@ class Products(LoginRequiredMixin, ListView):
 
 class ProductCreate(LoginRequiredMixin, CreateView):
     form_class = ProductForm
-    template_name = 'multivers/product_form.html'
-    success_url = reverse_lazy('multivers:products')
+    template_name = 'moneybird/product_form.html'
+    success_url = reverse_lazy('moneybird:products')
 
 
 class ProductUpdate(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
-    success_url = reverse_lazy('multivers:products')
+    success_url = reverse_lazy('moneybird:products')
 
 
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
-    success_url = reverse_lazy('multivers:products')
+    success_url = reverse_lazy('moneybird:products')
 
 
+# TODO: Remove test function
 def test(request):
-    multivers = Multivers(request)
+    moneybird = Moneybird(request)
 
-    line = MultiversOrderLine(date=datetime.now(),
+    line = MoneybirdOrderLine(date=datetime.now(),
                               description="DiMiBo - Grolsch Premiumbier",
                               discount=0.05,
                               product_id="2001",
                               quantity=105.0)
 
-    order = MultiversOrder(date=datetime.now(),
+    order = MoneybirdOrder(date=datetime.now(),
                            reference="Borrels Juni",
                            payment_condition_id="14",
                            customer_id="2008001",
@@ -315,6 +311,6 @@ def test(request):
     order.add_line(line)
     order.add_line(line)
 
-    response = multivers.create_order("MVL48759", order)
+    response = moneybird.create_order("MVL48759", order)
 
     return HttpResponse(json.dumps(response), content_type="application/json")

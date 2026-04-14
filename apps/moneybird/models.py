@@ -1,7 +1,6 @@
-from __future__ import unicode_literals
-
 from django.db import models
 from django.urls import reverse
+from apps.moneybird.tools_moneybird import MoneybirdOrder, MoneybirdOrderLine
 
 
 class Settings(models.Model):
@@ -31,31 +30,7 @@ class Settings(models.Model):
         setting.save()
 
     def get_absolute_url(self):
-        return reverse('multivers:settings_update', args=(self.pk,))
-
-
-class Product(models.Model):
-    NO_MARGIN = 0
-    HAS_MARGIN = 1
-    MARGIN = (
-        (NO_MARGIN, 'No margin'),
-        (HAS_MARGIN, 'Has margin')
-    )
-
-    alexia_id = models.IntegerField(unique=True)
-    alexia_name = models.CharField(max_length=100, blank=False)
-    multivers_id = models.CharField(max_length=20, blank=False)
-    multivers_name = models.CharField(max_length=100, blank=False)
-    margin = models.IntegerField(choices=MARGIN, default=HAS_MARGIN)
-
-    def get_absolute_url(self):
-        return reverse('multivers:product_edit', args=(self.pk,))
-
-    def __str__(self):
-        return self.alexia_name
-
-    class Meta:
-        ordering = ('multivers_id',)
+        return reverse('moneybird:settings_update', args=(self.pk,))
 
 
 class Customer(models.Model):
@@ -65,45 +40,22 @@ class Customer(models.Model):
     )
 
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
-    multivers_id = models.CharField(max_length=50, null=True, blank=False)
+    moneybird_id = models.CharField(max_length=50, null=True, blank=True)
     vat_type = models.CharField(max_length=1, null=True, blank=False, choices=VAT_TYPE)
 
     def get_absolute_url(self):
-        return reverse('multivers:customer_update', args=(self.pk,))
+        return reverse('moneybird:customer_update', args=(self.pk,))
 
     def __str__(self):
         return self.alexia_name
 
     class Meta:
-        ordering = ['multivers_id']
-
-
-class Location(models.Model):
-    NO_DISCOUNT = 0
-    EXCLUSIVE_DISCOUNT = 1
-    ALWAYS_DISCOUNT = 2
-    DISCOUNT_TYPE = (
-        (0, 'No discount'),
-        (1, 'Discount if exclusive'),
-        (2, 'Always discount'),
-    )
-
-    name = models.CharField(max_length=100, blank=False, unique=True)
-    no_discount = models.IntegerField(choices=DISCOUNT_TYPE, null=True)
-
-    def get_absolute_url(self):
-        return reverse('multivers:location_update', args=(self.pk,))
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ['name']
+        ordering = ['moneybird_id']
 
 
 class ConceptOrder(models.Model):
     date = models.DateField()
-    customer = models.ForeignKey("multivers.Customer", on_delete=models.PROTECT)
+    customer = models.ForeignKey("moneybird.Customer", on_delete=models.PROTECT)
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -113,8 +65,7 @@ class ConceptOrder(models.Model):
 
     @property
     def reference(self):
-        MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober",
-                  "november", "december"]
+        MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"]
         first = self.conceptorderdrink_set.first()
         last = self.conceptorderdrink_set.last()
 
@@ -126,18 +77,18 @@ class ConceptOrder(models.Model):
         else:
             return "Borrels {} - {}".format(first_month, last_month)
 
-    def as_multivers(self, revenue_account=None):
-        from apps.multivers.tools import MultiversOrder
-        result = MultiversOrder(date=self.date,
+    def as_moneybird(self, revenue_account=None):
+        # TODO: Rewrite to moneybird
+        result = MoneybirdOrder(date=self.date,
                                 reference=self.reference,
                                 payment_condition_id=Settings.get('payment_condition'),
-                                customer_id=self.customer.multivers_id,
+                                customer_id=self.customer.moneybird_id,
                                 customer_vat_type=self.customer.vat_type,
                                 processor_id=Settings.get('processor_id'),
                                 processor_name=Settings.get('processor_name'))
 
         for drink in self.conceptorderdrink_set.all():
-            for line in drink.as_multivers(revenue_account=revenue_account):
+            for line in drink.as_moneybird(revenue_account=revenue_account):
                 result.add_line(line)
 
         return result
@@ -147,31 +98,23 @@ class ConceptOrder(models.Model):
 
 
 class ConceptOrderDrink(models.Model):
-    order = models.ForeignKey("multivers.ConceptOrder", on_delete=models.CASCADE)
+    order = models.ForeignKey("moneybird.ConceptOrder", on_delete=models.CASCADE)
     date = models.DateField()
     name = models.CharField(max_length=255)
-    locations = models.ManyToManyField("multivers.Location")
-
+    location = models.CharField(max_length=255, default="Unknown")
     sent = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
 
-    def as_multivers(self, revenue_account=None):
-        from apps.multivers.tools import MultiversOrderLine
+    def as_moneybird(self, revenue_account=None):
         order_lines = []
 
-        discount_amount = float(Settings.get('discount')) / 100.0
-        discount_location = self.locations.filter(no_discount=Location.ALWAYS_DISCOUNT).exists() or \
-                            not self.locations.filter(no_discount=Location.NO_DISCOUNT)
-
         for line in self.conceptorderdrinkline_set.all():
-            discount = discount_location and line.product.margin == Product.HAS_MARGIN
-
-            order_lines.append(MultiversOrderLine(date=self.date,
-                                                  description="{} - {}".format(self.name, line.product.multivers_name),
-                                                  discount=discount_amount if discount else 0.0,
-                                                  product_id=line.product.multivers_id,
+            # TODO: Rewrite to moneybird
+            order_lines.append(MoneybirdOrderLine(date=self.date,
+                                                  description="{} - {}".format(self.name, line.product.moneybird_name),
+                                                  product_id=line.product.moneybird_id,
                                                   quantity=line.amount,
                                                   revenue_account=revenue_account if revenue_account else None))
 
@@ -182,8 +125,8 @@ class ConceptOrderDrink(models.Model):
 
 
 class ConceptOrderDrinkLine(models.Model):
-    drink = models.ForeignKey("multivers.ConceptOrderDrink", models.CASCADE)
-    product = models.ForeignKey("multivers.Product", models.PROTECT)
+    drink = models.ForeignKey("moneybird.ConceptOrderDrink", models.CASCADE)
+    product = models.ForeignKey("moneybird.Product", models.PROTECT)
     amount = models.FloatField()
 
     def __str__(self):
@@ -191,3 +134,19 @@ class ConceptOrderDrinkLine(models.Model):
 
     class Meta:
         ordering = ['product']
+
+
+class Product(models.Model):
+    alexia_id = models.IntegerField(unique=True)
+    alexia_name = models.CharField(max_length=100, blank=False)
+    moneybird_id = models.CharField(max_length=20, blank=True)
+    moneybird_name = models.CharField(max_length=100, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('moneybird:product_edit', args=(self.pk,))
+
+    def __str__(self):
+        return self.alexia_name
+
+    class Meta:
+        ordering = ['moneybird_id']

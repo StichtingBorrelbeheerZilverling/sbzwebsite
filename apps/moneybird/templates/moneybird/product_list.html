@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    <h1>
+        Moneybird/Alexia products
+        <button class="btn btn-secondary" data-toggle="modal" data-target="#create-Product">
+            + Create
+        </button>
+    </h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th colspan="2">Alexia Name</th>
+            <th colspan="2">Moneybird Name</th>
+            <th><!-- Buttons --></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for product in product_list %}
+            <tr>
+                <td>{{ product.alexia_id }}</td>
+                <td>{{ product.alexia_name }}</td>
+                <td>{{ product.moneybird_id }}</td>
+                <td>{{ product.moneybird_name }}</td>
+                <td>
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+                            data-target="#edit-Product-{{ product.pk }}">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#delete-Product-{{ product.pk }}">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block modals %}
+    {% bootstrap_create_modal create_form 'moneybird:product_add' %}
+
+    {% for product in product_list %}
+        {% bootstrap_edit_modal product product.edit_form 'moneybird:product_edit' product.pk %}
+        {% bootstrap_delete_modal product 'moneybird:product_delete' product.pk %}
+    {% endfor %}
+{% endblock %}
