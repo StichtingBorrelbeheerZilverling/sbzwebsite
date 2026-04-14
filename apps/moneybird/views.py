@@ -50,7 +50,6 @@ class SaveCode(LoginRequiredMixin, RedirectView):
 
 class ConceptOrderView(LoginRequiredMixin, DetailView):
     queryset = ConceptOrder.objects.all().prefetch_related('conceptorderdrink_set',
-                                                           'conceptorderdrink_set__locations',
                                                            'conceptorderdrink_set__conceptorderdrinkline_set',
                                                            'conceptorderdrink_set__conceptorderdrinkline_set__product')
 
@@ -193,10 +192,13 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
                 order_drink.order = order
                 order_drink.date = datetime.strptime(drink['date'], '%d-%m-%Y')
                 order_drink.name = drink['drink_name']
-                order_drink.save()
 
-                for location in drink['location']:
-                    order_drink.locations.add(location)
+                for i, location in enumerate(drink['location']):
+                    order_drink.locations += location
+                    if i != len(drink['location']) - 1:
+                        order_drink.locations += ", "
+
+                order_drink.save()
 
                 for product_id, quantity in drink['products'].items():
                     order_drink_line = ConceptOrderDrinkLine()
@@ -296,7 +298,6 @@ def test(request):
 
     line = MoneybirdOrderLine(date=datetime.now(),
                               description="DiMiBo - Grolsch Premiumbier",
-                              discount=0.05,
                               product_id="2001",
                               quantity=105.0)
 

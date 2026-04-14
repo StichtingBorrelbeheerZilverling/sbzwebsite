@@ -101,7 +101,7 @@ class ConceptOrderDrink(models.Model):
     order = models.ForeignKey("moneybird.ConceptOrder", on_delete=models.CASCADE)
     date = models.DateField()
     name = models.CharField(max_length=255)
-    location = models.CharField(max_length=255, default="Unknown")
+    locations = models.CharField(max_length=255)
     sent = models.BooleanField(default=False)
 
     def __str__(self):

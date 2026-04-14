@@ -110,11 +110,11 @@ class ProductForm(ModelForm):
 
 
 class ConceptOrderDrinkForm(ModelForm):
-    location = CharField(max_length=255)
+    locations = CharField(max_length=255)
 
     class Meta:
         model = ConceptOrderDrink
-        fields = ['name', 'date', 'location']
+        fields = ['name', 'date', 'locations']
 
 
 class ConceptOrderDrinkLineForm(ModelForm):
