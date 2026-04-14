@@ -4,6 +4,7 @@ from datetime import datetime
 from django.forms import ModelForm, Form, CharField
 from django import forms
 
+
 from apps.moneybird.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 
@@ -123,7 +124,3 @@ class ConceptOrderDrinkLineForm(ModelForm):
     class Meta:
         model = ConceptOrderDrinkLine
         fields = ['product', 'amount']
-
-
-class SendOrdersForm(Form):
-    override_revenue_account = CharField(max_length=255, required=False)

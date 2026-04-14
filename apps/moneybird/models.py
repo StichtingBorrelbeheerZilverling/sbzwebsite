@@ -33,6 +33,7 @@ class Settings(models.Model):
         return reverse('moneybird:settings_update', args=(self.pk,))
 
 
+# TODO: Make sure that adding customers also adds them to Moneybird
 class Customer(models.Model):
     VAT_TYPE = (
         ('0', 'Exclusief BTW'),
@@ -77,18 +78,13 @@ class ConceptOrder(models.Model):
         else:
             return "Borrels {} - {}".format(first_month, last_month)
 
-    def as_moneybird(self, revenue_account=None):
-        # TODO: Rewrite to moneybird
-        result = MoneybirdOrder(date=self.date,
-                                reference=self.reference,
-                                payment_condition_id=Settings.get('payment_condition'),
-                                customer_id=self.customer.moneybird_id,
-                                customer_vat_type=self.customer.vat_type,
-                                processor_id=Settings.get('processor_id'),
-                                processor_name=Settings.get('processor_name'))
+    def as_moneybird(self):
+        result = MoneybirdOrder(reference=self.reference,
+                                contact_id=int(self.customer.moneybird_id),
+                                customer_vat_type=self.customer.vat_type)
 
         for drink in self.conceptorderdrink_set.all():
-            for line in drink.as_moneybird(revenue_account=revenue_account):
+            for line in drink.as_moneybird():
                 result.add_line(line)
 
         return result
@@ -107,16 +103,14 @@ class ConceptOrderDrink(models.Model):
     def __str__(self):
         return self.name
 
-    def as_moneybird(self, revenue_account=None):
+    def as_moneybird(self):
         order_lines = []
 
         for line in self.conceptorderdrinkline_set.all():
             # TODO: Rewrite to moneybird
-            order_lines.append(MoneybirdOrderLine(date=self.date,
-                                                  description="{} - {}".format(self.name, line.product.moneybird_name),
+            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.moneybird_name),
                                                   product_id=line.product.moneybird_id,
-                                                  quantity=line.amount,
-                                                  revenue_account=revenue_account if revenue_account else None))
+                                                  quantity=line.amount))
 
         return order_lines
 
@@ -135,7 +129,7 @@ class ConceptOrderDrinkLine(models.Model):
     class Meta:
         ordering = ['product']
 
-
+# TODO: Make sure that adding products also adds them to Moneybird
 class Product(models.Model):
     alexia_id = models.IntegerField(unique=True)
     alexia_name = models.CharField(max_length=100, blank=False)

@@ -8,15 +8,14 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.urls import reverse_lazy
-from django.views.generic import FormView, ListView, DeleteView, CreateView
-from django.views.generic import UpdateView
+from django.views.generic import FormView, ListView, DeleteView, CreateView, UpdateView, View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from moneybird import MoneyBird, TokenAuthentication
 
 from apps.moneybird.defaults import make_orderline, make_order
-from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
-from apps.moneybird.tools_moneybird import Moneybird, MoneybirdOrderLine, MoneybirdOrder
+from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
+from apps.moneybird.tools_moneybird import MoneybirdOrderLine, MoneybirdOrder
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -27,7 +26,6 @@ class Index(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super(Index, self).get_context_data(**kwargs)
 
-        context['send_form'] = SendOrdersForm()
         context['create_order_form'] = FileForm()
 
         context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
@@ -210,25 +208,10 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
         return super(OrdersCreateFromFile, self).form_valid(form)
 
 
-class OrdersSendAllView(LoginRequiredMixin, FormView):
-    form_class = SendOrdersForm
-    
-    #TODO Fix that only Moneybird API is used
-
-    def form_valid(self, form):
+class OrdersSendAllView(LoginRequiredMixin, View):
+    def post(self, request):
         bookkeeping = Settings.get("bookkeeping_handler")
         if bookkeeping == "moneybird":
-            moneybird, do_redirect = Moneybird.instantiate_or_redirect(self.request)
-            if do_redirect: return do_redirect
-
-            admin = Settings.get('db')
-
-            orders = ConceptOrder.objects.all()
-
-            for order in orders:
-                moneybird_order = order.as_moneybird(revenue_account=form.cleaned_data['override_revenue_account'])
-                moneybird.create_order(administration=admin, order=moneybird_order)
-        elif bookkeeping == "moneybird":
             moneybird = MoneyBird(TokenAuthentication(Settings.get("moneybird_token")))
             administrations = moneybird.get('administrations')
             administration = administrations[0]['id']
@@ -236,7 +219,8 @@ class OrdersSendAllView(LoginRequiredMixin, FormView):
             orders = ConceptOrder.objects.all()
 
             for order in orders:
-                moneybird_order = order.as_moneybird()
+                moneybird_order = order.as_moneybird().as_dict()
+                print(moneybird_order)
                 moneybird.post('sales_invoices', {'sales_invoice': moneybird_order}, administration)
 
 
@@ -290,28 +274,3 @@ class ProductUpdate(LoginRequiredMixin, UpdateView):
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
     success_url = reverse_lazy('moneybird:products')
-
-
-# TODO: Remove test function
-def test(request):
-    moneybird = Moneybird(request)
-
-    line = MoneybirdOrderLine(date=datetime.now(),
-                              description="DiMiBo - Grolsch Premiumbier",
-                              product_id="2001",
-                              quantity=105.0)
-
-    order = MoneybirdOrder(date=datetime.now(),
-                           reference="Borrels Juni",
-                           payment_condition_id="14",
-                           customer_id="2008001",
-                           customer_vat_type="1",
-                           processor_id=38,
-                           processor_name="Pieter Bos")
-
-    order.add_line(line)
-    order.add_line(line)
-
-    response = moneybird.create_order("MVL48759", order)
-
-    return HttpResponse(json.dumps(response), content_type="application/json")

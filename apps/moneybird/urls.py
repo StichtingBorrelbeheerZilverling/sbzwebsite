@@ -34,6 +34,4 @@ urlpatterns = [
     url(r'^order/drink/line/(?P<pk>[0-9]+)/edit', view=views.ConceptOrderDrinkLineEditView.as_view(), name='order_drink_line_edit'),
     url(r'^order/drink/line/(?P<pk>[0-9]+)/delete', view=views.ConceptOrderDrinkLineDeleteView.as_view(), name='order_drink_line_delete'),
 
-    # TODO: Remove
-    url(r'^test$', view=views.test, name='test'),
 ]

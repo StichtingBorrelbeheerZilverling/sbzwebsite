@@ -33,7 +33,7 @@
 
     <p>
         {% if conceptorder_list and not new_products and not new_customers %}
-            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#form-send">
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send">
                 Send All
             </button>
         {% endif %}
@@ -81,5 +81,5 @@
 
     {% bootstrap_create_modal create_order_form 'moneybird:orders_create_from_file' %}
 
-    {% bootstrap_form_modal "send" "Send all pending invoices" send_form "moneybird:orders_send_all" %}
+    {% bootstrap_confirm_modal "send" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
 {% endblock %}
