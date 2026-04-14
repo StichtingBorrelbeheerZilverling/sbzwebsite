@@ -7,7 +7,6 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 import settings
-# from apps.moneybird.models import Settings
 
 # TODO: Rewrite file to moneybird
 
@@ -130,6 +129,7 @@ class Moneybird:
     EXPIRE_MARGIN = 5*60 # seconds
 
     def __init__(self, request, client_id=None, client_secret=None):
+        from apps.moneybird.models import Settings
         self.request = request
         self.client_id = client_id or settings.mv_client_id
         self.client_secret = client_secret or settings.mv_client_secret
@@ -163,6 +163,7 @@ class Moneybird:
             ))
 
     def _request_token(self, token_type, token, grant_type):
+        from apps.moneybird.models import Settings
         response = requests.post(Moneybird.BASE_URL + "OAuth/Token", data={
             token_type: token,
             "client_id": self.client_id,
