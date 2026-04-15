@@ -3,6 +3,7 @@ from datetime import datetime
 from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,12 +12,12 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView, ListView, DeleteView, CreateView, UpdateView, View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
-from moneybird import MoneyBird, TokenAuthentication
 
 from apps.moneybird.defaults import make_orderline, make_order
 from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
-from apps.moneybird.tools_moneybird import MoneybirdOrderLine, MoneybirdOrder
+from apps.moneybird.tools_moneybird import MoneybirdOrderLine, MoneybirdOrder, Moneybird
 from apps.util.profiling import profile
+import settings
 from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 
@@ -210,19 +211,26 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 class OrdersSendAllView(LoginRequiredMixin, View):
     def post(self, request):
-        bookkeeping = Settings.get("bookkeeping_handler")
-        if bookkeeping == "moneybird":
-            moneybird = MoneyBird(TokenAuthentication(Settings.get("moneybird_token")))
-            administrations = moneybird.get('administrations')
-            administration = administrations[0]['id']
+        client_id = Settings.get("client_id")
+        client_secret = Settings.get("client_secret")
+        moneybird, do_redirect = Moneybird.instantiate_or_redirect(request, client_id, client_secret)
+        if do_redirect: return do_redirect
+        "https://moneybird.com/oauth/authorize?client_id=&redirect_uri=http://127.0.0.1:8000/moneybird/code&response_type=code&scope=sales_invoices"
 
-            orders = ConceptOrder.objects.all()
+        orders = ConceptOrder.objects.all()
 
-            for order in orders:
-                moneybird_order = order.as_moneybird().as_dict()
-                print(moneybird_order)
-                moneybird.post('sales_invoices', {'sales_invoice': moneybird_order}, administration)
-
+        for order in orders:
+            moneybird_order = order.as_moneybird()
+            response = moneybird.create_invoice(moneybird.get_administrations()[0]['id'], moneybird_order)
+            if response.status_code == 402:
+                print("LIMIT REACHED")
+                messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
+            elif response.status_code == 201:
+                messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
+                order.sent = True
+                order.save()
+            else:
+                messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, response.text))
 
         return redirect('moneybird:index')
 
