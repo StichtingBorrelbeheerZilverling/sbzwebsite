@@ -274,3 +274,8 @@ class MoneybirdOrder:
             "details_attributes": lines,
         }
 
+
+class MoneybirdProduct:
+    def __init__(self, moneybird_id, moneybird_name):
+        self.moneybird_id = moneybird_id
+        self.moneybird_name = moneybird_name

@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^product/(?P<pk>[0-9]+)/edit$', view=views.ProductUpdate.as_view(), name='product_edit'),
     url(r'^product/(?P<pk>[0-9]+)/delete$', view=views.ProductDelete.as_view(), name='product_delete'),
 
+    # TODO: create option to manually make an order?
     url(r'^order/(?P<pk>[0-9]+)$', view=views.ConceptOrderView.as_view(), name='order_view'),
     url(r'^order/(?P<pk>[0-9]+)/delete$', view=views.ConceptOrderDelete.as_view(), name='order_delete'),
     url(r'^order/createFromFile$', view=views.OrdersCreateFromFile.as_view(), name='orders_create_from_file'),

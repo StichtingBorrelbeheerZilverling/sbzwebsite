@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from apps.moneybird.tools_moneybird import MoneybirdOrder, MoneybirdOrderLine
+from apps.moneybird.tools_moneybird import MoneybirdOrder, MoneybirdOrderLine, MoneybirdProduct
 
 
 class Settings(models.Model):
@@ -141,6 +141,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.alexia_name
+    
+    def as_moneybird(self):
+        return MoneybirdProduct(moneybird_id=self.moneybird_id, moneybird_name=self.moneybird_name)
 
     class Meta:
         ordering = ['moneybird_id']
