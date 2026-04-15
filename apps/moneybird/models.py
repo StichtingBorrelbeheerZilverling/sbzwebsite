@@ -57,6 +57,7 @@ class Customer(models.Model):
 class ConceptOrder(models.Model):
     date = models.DateField()
     customer = models.ForeignKey("moneybird.Customer", on_delete=models.PROTECT)
+    sent = models.BooleanField(default=False)
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -98,7 +99,6 @@ class ConceptOrderDrink(models.Model):
     date = models.DateField()
     name = models.CharField(max_length=255)
     locations = models.CharField(max_length=255)
-    sent = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
