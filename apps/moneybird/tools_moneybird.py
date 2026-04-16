@@ -124,13 +124,15 @@ class Moneybird:
     def get_administrations(self):
         return self._get("administrations")
 
-    # TODO: Rewrite to MB
-    def get_order_info(self, administration, order_id):
-        return self._get("{}/OrderInfo/{}".format(administration, order_id))
-
-    # TODO: Rewrite to MB
     def create_invoice(self, administration, order):
         return self._post("{}/sales_invoices".format(administration), {'sales_invoice': order.as_dict()})
+    
+    def create_product(self, administration, product):
+        response = self._post("{}/products".format(administration), {'product': product.as_dict()})
+        if response.status_code == 201:
+            product.moneybird_id = response.json()['id']
+        return response
+
 
 
 
@@ -179,8 +181,18 @@ class MoneybirdOrder:
             "details_attributes": lines,
         }
 
-
+# TODO: Add tax rate and ledger account (so drink type, e.g. beer, wine) to products
 class MoneybirdProduct:
-    def __init__(self, moneybird_id, moneybird_name):
+    def __init__(self, moneybird_id, moneybird_name, tax_rate_id, ledger_account_id):
         self.moneybird_id = moneybird_id
         self.moneybird_name = moneybird_name
+        self.tax_rate_id = tax_rate_id
+        self.ledger_account_id = ledger_account_id
+
+    def as_dict(self):
+        return {
+            "price": 0,  # Moneybird requires a price
+            "ledger_account_id": self.ledger_account_id, # Moneybird requires a ledger account id
+            "title": self.moneybird_name,
+            "tax_rate_id": self.tax_rate_id
+        }
