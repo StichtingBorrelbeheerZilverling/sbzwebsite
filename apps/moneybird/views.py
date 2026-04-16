@@ -211,9 +211,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 class OrdersSendAllView(LoginRequiredMixin, View):
     def post(self, request):
-        client_id = Settings.get("client_id")
-        client_secret = Settings.get("client_secret")
-        moneybird, do_redirect = Moneybird.instantiate_or_redirect(request, client_id, client_secret)
+        moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
         if do_redirect: return do_redirect
         "https://moneybird.com/oauth/authorize?client_id=&redirect_uri=http://127.0.0.1:8000/moneybird/code&response_type=code&scope=sales_invoices"
 
@@ -221,9 +219,8 @@ class OrdersSendAllView(LoginRequiredMixin, View):
 
         for order in orders:
             moneybird_order = order.as_moneybird()
-            response = moneybird.create_invoice(moneybird.get_administrations()[0]['id'], moneybird_order)
+            response = moneybird.create_invoice(moneybird.get_administrations().json()[0]['id'], moneybird_order)
             if response.status_code == 402:
-                print("LIMIT REACHED")
                 messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
             elif response.status_code == 201:
                 messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))

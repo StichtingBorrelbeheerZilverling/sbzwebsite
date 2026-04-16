@@ -1,4 +1,3 @@
-import time
 from datetime import datetime, timedelta, timezone
 from json import JSONDecodeError
 
@@ -16,38 +15,33 @@ class Moneybird:
     def __init__(self, request, client_id=None, client_secret=None):
         from apps.moneybird.models import Settings
         self.request = request
-        self.client_id = client_id or settings.mv_client_id
-        self.client_secret = client_secret or settings.mv_client_secret
 
+        self.client_id = client_id or settings.mb_client_id
+        self.client_secret = client_secret or settings.mb_client_secret
+        
         self.access_token = Settings.get("access_token")
-        print("DEBUG: Current access token2: {}".format(self.access_token))
         self.refresh_token = Settings.get("refresh_token")
-        print("DEBUG: Current refresh token2: {}".format(self.refresh_token))
+        self.auth_code = Settings.get("auth_code")
+        self.created_at = Settings.get("token_created_at")
+        self.expires_in = Settings.get("token_expires_in")
 
-        # TODO: just save the expire datetime
-        acquired = Settings.get("token_acquired")
-        expires_in = Settings.get("token_expires_in")
-
-        if acquired and expires_in:
-            self.access_token_expiry = datetime.fromtimestamp(float(acquired), tz=timezone.utc) \
-                                       + timedelta(seconds=int(expires_in)-Moneybird.EXPIRE_MARGIN)
+        if self.created_at and self.expires_in:
+            self.access_token_expiry = datetime.fromtimestamp(float(self.created_at), tz=timezone.utc) + timedelta(seconds=int(self.expires_in)-Moneybird.EXPIRE_MARGIN)
         else:
             self.access_token_expiry = None
-
-        self.auth_code = Settings.get("auth_code")
 
         self._auth()
 
     @staticmethod
     def instantiate_or_redirect(request, *args, **kwargs):
-        # try:
+        try:
             return Moneybird(request, *args, **kwargs), None
-        # except Exception:
-        #     return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
-        #         args[0], 
-        #         request.build_absolute_uri(reverse('moneybird:code')),
-        #         "sales_invoices",
-        #     ))
+        except Exception:
+            return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
+                settings.mb_client_id, 
+                request.build_absolute_uri(reverse('moneybird:code')),
+                "sales_invoices",
+            ))
 
     def _auth(self):
         now = datetime.now(tz=timezone.utc)
@@ -70,9 +64,13 @@ class Moneybird:
                 self._request_token("code", self.auth_code, "authorization_code")
             else:
                 raise Exception("Tokens are not present; request a new authorization code.")
-            
         
-        
+        # Test if Access token is valid
+        response = self.get_administrations()
+        if response.status_code != 200:
+            # Remove Access token and try again
+            self.access_token = None
+            self._auth()
 
     def _request_token(self, token_type, token, grant_type):
         from apps.moneybird.models import Settings
@@ -83,7 +81,6 @@ class Moneybird:
             "redirect_uri": self.request.build_absolute_uri(reverse('moneybird:code')),
             "grant_type": grant_type,
         })
-        print(response.request.body)
 
         if response.status_code != 200:
             raise Exception("Unknown response from the Moneybird API:\nStatus code: {}\n{}".format(response.status_code, response.text))
@@ -96,13 +93,11 @@ class Moneybird:
 
         if 'expires_in' in data:
             self.access_token_expiry = datetime.now(tz=timezone.utc) + timedelta(seconds=int(data['expires_in'])-Moneybird.EXPIRE_MARGIN)
-            Settings.set('expires_in', data['expires_in'])
+            Settings.set('token_expires_in', data['expires_in'])
 
         Settings.set('refresh_token', self.refresh_token)
-        print("DEBUG: Setting refresh token")
         Settings.set('access_token', self.access_token)
-        print("DEBUG: Setting access token")
-        Settings.set('access_token_acquired', data['created_at'])
+        Settings.set('token_created_at', data['created_at'])
 
 
     def _get(self, method):
@@ -111,7 +106,7 @@ class Moneybird:
             'Accept': 'application/json',
         })
 
-        return response.json()
+        return response
 
     def _post(self, method, data):
         response = requests.post(Moneybird.BASE_URL + "api/v2/" + method, headers={
