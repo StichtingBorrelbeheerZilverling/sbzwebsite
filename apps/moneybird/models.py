@@ -33,7 +33,6 @@ class Settings(models.Model):
         return reverse('moneybird:settings_update', args=(self.pk,))
 
 
-# TODO: Make sure that adding customers also adds them to Moneybird
 class Customer(models.Model):
     VAT_TYPE = (
         ('0', 'Exclusief BTW'),
@@ -136,7 +135,6 @@ class ConceptOrderDrinkLine(models.Model):
         ordering = ['product']
 
 
-# TODO: Make sure that adding products also adds them to Moneybird
 class Product(models.Model):
     alexia_id = models.IntegerField(unique=True)
     alexia_name = models.CharField(max_length=100, blank=False)

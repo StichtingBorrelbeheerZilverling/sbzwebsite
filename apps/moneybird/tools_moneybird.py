@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from json import JSONDecodeError
 from pyexpat.errors import messages
 
 import requests

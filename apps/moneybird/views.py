@@ -4,7 +4,6 @@ from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.urls import reverse_lazy
@@ -12,11 +11,9 @@ from django.views.generic import FormView, ListView, DeleteView, CreateView, Upd
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 
-from apps.moneybird.defaults import make_orderline, make_order
 from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
 from apps.util.profiling import profile
-import settings
 from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 
