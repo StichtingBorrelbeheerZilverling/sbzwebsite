@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from apps.moneybird.tools_moneybird import MoneybirdOrder, MoneybirdOrderLine, MoneybirdProduct
+from apps.moneybird.tools_moneybird import MoneybirdOrder, MoneybirdOrderLine
 
 
 class Settings(models.Model):
@@ -41,23 +41,29 @@ class Customer(models.Model):
     )
 
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
-    moneybird_id = models.CharField(max_length=50, null=True, blank=True)
-    vat_type = models.CharField(max_length=1, null=True, blank=False, choices=VAT_TYPE)
+    moneybird_id = models.CharField(max_length=18, blank=True, null=False)
+    vat_type = models.CharField(max_length=1, blank=False, choices=VAT_TYPE, default='1')
+    # self.invoice_workflow_id = invoice_workflow_id # Currently not supported
 
     def get_absolute_url(self):
         return reverse('moneybird:customer_update', args=(self.pk,))
 
     def __str__(self):
         return self.alexia_name
+    
+    def as_moneybird_dict(self):
+        return {
+            "company_name": self.alexia_name,
+        }
 
     class Meta:
-        ordering = ['moneybird_id']
+        ordering = ['alexia_name']
 
 
 class ConceptOrder(models.Model):
     date = models.DateField()
     customer = models.ForeignKey("moneybird.Customer", on_delete=models.PROTECT)
-    sent = models.BooleanField(default=False)
+    sent = models.BooleanField(default=False) # TODO: implement that this is used?
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -67,7 +73,7 @@ class ConceptOrder(models.Model):
 
     @property
     def reference(self):
-        MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"]
+        MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         first = self.conceptorderdrink_set.first()
         last = self.conceptorderdrink_set.last()
 
@@ -108,7 +114,7 @@ class ConceptOrderDrink(models.Model):
 
         for line in self.conceptorderdrinkline_set.all():
             # TODO: Rewrite to moneybird
-            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.moneybird_name),
+            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.alexia_name),
                                                   product_id=line.product.moneybird_id,
                                                   quantity=line.amount))
 
@@ -119,8 +125,8 @@ class ConceptOrderDrink(models.Model):
 
 
 class ConceptOrderDrinkLine(models.Model):
-    drink = models.ForeignKey("moneybird.ConceptOrderDrink", models.CASCADE)
-    product = models.ForeignKey("moneybird.Product", models.PROTECT)
+    drink = models.ForeignKey("moneybird.ConceptOrderDrink", on_delete=models.CASCADE)
+    product = models.ForeignKey("moneybird.Product", on_delete=models.PROTECT)
     amount = models.FloatField()
 
     def __str__(self):
@@ -129,12 +135,13 @@ class ConceptOrderDrinkLine(models.Model):
     class Meta:
         ordering = ['product']
 
+
 # TODO: Make sure that adding products also adds them to Moneybird
 class Product(models.Model):
     alexia_id = models.IntegerField(unique=True)
     alexia_name = models.CharField(max_length=100, blank=False)
-    moneybird_id = models.CharField(max_length=20, blank=True)
-    moneybird_name = models.CharField(max_length=100, blank=True)
+    moneybird_id = models.CharField(max_length=18, blank=True)
+    product_type = models.ForeignKey("moneybird.ProductType", on_delete=models.PROTECT)
 
     def get_absolute_url(self):
         return reverse('moneybird:product_edit', args=(self.pk,))
@@ -142,8 +149,56 @@ class Product(models.Model):
     def __str__(self):
         return self.alexia_name
     
-    def as_moneybird(self):
-        return MoneybirdProduct(moneybird_id=self.moneybird_id, moneybird_name=self.moneybird_name)
+    # TODO: Implement automatic ledger_account_id based on type of drink
+    def as_moneybird_dict(self):
+        return {
+            "price": 0,  # Moneybird requires a price
+            "ledger_account_id": self.product_type.ledger_account_id, # Moneybird requires a ledger account id
+            "title": self.alexia_name,
+            "vat_rate_id": self.product_type.vat_rate.moneybird_id,
+        }
 
     class Meta:
-        ordering = ['moneybird_id']
+        ordering = ['alexia_id']
+
+
+# TODO: make product types updatable/creatable/deletable
+class ProductType(models.Model):
+    PRODUCT_TYPES = (
+        ('0', 'Bier'),
+        ('1', 'Speciaalbier'),
+        ('2', 'Wijn'),
+        ('3', 'Fris'),
+        ('4', 'Maltbier'),
+        ('5', 'Snacks'),
+        ('6', 'Speciaalbier van de maand'),
+        ('7', 'Likeur'),
+    )
+
+    product_type = models.CharField(max_length=1, choices=PRODUCT_TYPES, unique=True, blank=False)
+    ledger_account_id = models.CharField(max_length=18, blank=True)
+    vat_rate = models.ForeignKey("moneybird.VatRate", on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.product_type
+
+    class Meta:
+        ordering = ['product_type']
+
+
+class VatRate(models.Model):
+    VAT_RATES = (
+        ('0', '21%'),
+        ('1', '9%'),
+        ('2', '0%'),
+        ('3', 'BTW vrijgesteld'),
+    )
+
+    vat_rate = models.CharField(max_length=1, choices=VAT_RATES, unique=True, blank=False)
+    moneybird_id = models.CharField(max_length=18, blank=False)
+
+    def __str__(self):
+        return self.vat_rate
+
+    class Meta:
+        ordering = ['vat_rate']

@@ -5,7 +5,7 @@ from django.forms import ModelForm, Form, CharField
 from django import forms
 
 
-from apps.moneybird.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
+from apps.moneybird.models import Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 
 
@@ -107,8 +107,12 @@ class FileForm(forms.Form):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['alexia_id', 'alexia_name', 'moneybird_id', 'moneybird_name']
+        fields = ['alexia_id', 'alexia_name', 'moneybird_id', 'product_type']
 
+class ProductTypeForm(ModelForm):
+    class Meta:
+        model = ProductType
+        fields = ['product_type', 'ledger_account_id', 'vat_rate']
 
 class ConceptOrderDrinkForm(ModelForm):
     locations = CharField(max_length=255)

@@ -9,8 +9,8 @@ class SettingsAdmin(admin.ModelAdmin):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('alexia_id', 'alexia_name', 'moneybird_id', 'moneybird_name')
-    list_editable = ('moneybird_id', 'moneybird_name')
+    list_display = ('alexia_id', 'alexia_name', 'moneybird_id', 'product_type')
+    list_editable = ('moneybird_id', 'product_type')
 
 
 class CustomerAdmin(admin.ModelAdmin):
