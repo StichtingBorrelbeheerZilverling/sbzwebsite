@@ -110,7 +110,7 @@ class FileForm(forms.Form):
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'moneybird_id', 'moneybird_name', 'margin']
+        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'margin']
 
 
 class ConceptOrderDrinkForm(ModelForm):

@@ -49,8 +49,6 @@ class Product(models.Model):
     alexia_name = models.CharField(max_length=100, blank=False)
     multivers_id = models.CharField(max_length=20, blank=True)
     multivers_name = models.CharField(max_length=100, blank=True)
-    moneybird_id = models.CharField(max_length=32, blank=True)
-    moneybird_name = models.CharField(max_length=100, blank=True)
     margin = models.IntegerField(choices=MARGIN, default=HAS_MARGIN)
 
     def get_absolute_url(self):
@@ -71,7 +69,6 @@ class Customer(models.Model):
 
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
     multivers_id = models.CharField(max_length=50, null=True, blank=True)
-    moneybird_id = models.CharField(max_length=50, null=True, blank=True)
     vat_type = models.CharField(max_length=1, null=True, blank=False, choices=VAT_TYPE)
 
     def get_absolute_url(self):
@@ -148,16 +145,6 @@ class ConceptOrder(models.Model):
 
         return result
 
-    def as_moneybird(self):
-        from apps.multivers.tools_moneybird import MoneybirdOrder
-        result = MoneybirdOrder(contact_id=self.customer.moneybird_id, reference=self.reference,
-                                customer_vat_type=self.customer.vat_type)
-
-        for drink in self.conceptorderdrink_set.all():
-            for line in drink.as_moneybird():
-                result.add_line(line)
-        return result.as_dict()
-
     class Meta:
         ordering = ['date', 'customer']
 
@@ -191,15 +178,6 @@ class ConceptOrderDrink(models.Model):
                                                   quantity=line.amount,
                                                   revenue_account=revenue_account if revenue_account else None))
 
-        return order_lines
-
-    def as_moneybird(self):
-        from apps.multivers.tools_moneybird import MoneybirdOrderLine
-        order_lines = []
-
-        for line in self.conceptorderdrinkline_set.all():
-            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.moneybird_name),
-                                                  product_id=line.product.moneybird_id, quantity=line.amount))
         return order_lines
 
     class Meta:
