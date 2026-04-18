@@ -109,10 +109,12 @@ class ProductForm(ModelForm):
         model = Product
         fields = ['alexia_id', 'alexia_name', 'moneybird_id', 'product_type']
 
+
 class ProductTypeForm(ModelForm):
     class Meta:
         model = ProductType
         fields = ['product_type', 'ledger_account_id', 'vat_rate']
+
 
 class ConceptOrderDrinkForm(ModelForm):
     locations = CharField(max_length=255)

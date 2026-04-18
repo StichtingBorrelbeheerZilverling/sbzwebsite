@@ -162,20 +162,12 @@ class Product(models.Model):
 
 # TODO: make product types updatable/creatable/deletable
 class ProductType(models.Model):
-    PRODUCT_TYPES = (
-        ('0', 'Bier'),
-        ('1', 'Speciaalbier'),
-        ('2', 'Wijn'),
-        ('3', 'Fris'),
-        ('4', 'Maltbier'),
-        ('5', 'Snacks'),
-        ('6', 'Speciaalbier van de maand'),
-        ('7', 'Likeur'),
-    )
-
-    product_type = models.CharField(max_length=1, choices=PRODUCT_TYPES, unique=True, blank=False)
+    product_type = models.CharField(max_length=255, unique=True, blank=False)
     ledger_account_id = models.CharField(max_length=18, blank=True)
     vat_rate = models.ForeignKey("moneybird.VatRate", on_delete=models.PROTECT)
+
+    def get_absolute_url(self):
+        return reverse('moneybird:product_type_edit', args=(self.pk,))
 
     def __str__(self):
         return self.product_type
@@ -185,14 +177,7 @@ class ProductType(models.Model):
 
 
 class VatRate(models.Model):
-    VAT_RATES = (
-        ('0', '21%'),
-        ('1', '9%'),
-        ('2', '0%'),
-        ('3', 'BTW vrijgesteld'),
-    )
-
-    vat_rate = models.CharField(max_length=1, choices=VAT_RATES, unique=True, blank=False)
+    vat_rate = models.CharField(max_length=40, unique=True, blank=False)
     moneybird_id = models.CharField(max_length=18, blank=False)
 
     def __str__(self):
@@ -200,3 +185,5 @@ class VatRate(models.Model):
 
     class Meta:
         ordering = ['vat_rate']
+
+# TODO: make class for moneybird ledgers

@@ -11,10 +11,10 @@ from django.views.generic import FormView, ListView, DeleteView, CreateView, Upd
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 
-from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
+from apps.moneybird.forms import FileForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
 from apps.util.profiling import profile
-from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
+from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 
 class Index(LoginRequiredMixin, ListView):
@@ -31,13 +31,13 @@ class Index(LoginRequiredMixin, ListView):
         return context
 
 
-class SaveCode(LoginRequiredMixin, RedirectView):
+class SaveAuthCode(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
         if 'code' in kwargs and kwargs['code']:
             Settings.set('auth_code', unquote(kwargs['code']))
         elif 'code' in request.GET and request.GET['code']:
             Settings.set('auth_code', request.GET['code'])
-        return super(SaveCode, self).dispatch(request, *args, **kwargs)
+        return super(SaveAuthCode, self).dispatch(request, *args, **kwargs)
 
     def get_redirect_url(self, *args, **kwargs):
         return reverse('moneybird:index')
@@ -304,7 +304,7 @@ class SettingsUpdate(LoginRequiredMixin, UpdateView):
 
 class Products(LoginRequiredMixin, ListView):
     model = Product
-    ordering = ['moneybird_id']
+    ordering = ['alexia_id']
 
     def get_context_data(self, **kwargs):
         ctx = super(Products, self).get_context_data(**kwargs)
@@ -332,3 +332,37 @@ class ProductUpdate(LoginRequiredMixin, UpdateView):
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
     success_url = reverse_lazy('moneybird:products')
+
+
+class ProductTypes(LoginRequiredMixin, ListView):
+    model = ProductType
+    ordering = ['product_type']
+    context_object_name = "product_type_list"
+    template_name = "moneybird/product_type_list.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super(ProductTypes, self).get_context_data(**kwargs)
+
+        ctx['create_form'] = ProductTypeForm()
+
+        for product_type in ctx['product_type_list']:
+            product_type.edit_form = ProductTypeForm(instance=product_type)
+
+        return ctx
+
+
+class ProductTypeCreate(LoginRequiredMixin, CreateView):
+    form_class = ProductTypeForm
+    template_name = 'moneybird/product_type_form.html'
+    success_url = reverse_lazy('moneybird:product_types')
+
+
+class ProductTypeUpdate(LoginRequiredMixin, UpdateView):
+    model = ProductType
+    form_class = ProductTypeForm
+    success_url = reverse_lazy('moneybird:product_types')
+
+
+class ProductTypeDelete(LoginRequiredMixin, DeleteView):
+    model = ProductType
+    success_url = reverse_lazy('moneybird:product_types')

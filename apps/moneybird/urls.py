@@ -7,8 +7,7 @@ app_name = 'moneybird'
 urlpatterns = [
     url(r'^$', view=views.Index.as_view(), name='index'),
     
-    # TODO: Find out what this is
-    url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveCode.as_view(), name='code'),
+    url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveAuthCode.as_view(), name='code'),
 
     # TODO: Make Customers editable via interface
     url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_update'),
@@ -20,6 +19,11 @@ urlpatterns = [
     url(r'^product/add$', view=views.ProductCreate.as_view(), name='product_add'),
     url(r'^product/(?P<pk>[0-9]+)/edit$', view=views.ProductUpdate.as_view(), name='product_edit'),
     url(r'^product/(?P<pk>[0-9]+)/delete$', view=views.ProductDelete.as_view(), name='product_delete'),
+
+    url(r'^productTypes$', view=views.ProductTypes.as_view(), name='product_types'),
+    url(r'^productType/add$', view=views.ProductTypeCreate.as_view(), name='product_type_add'),
+    url(r'^productType/(?P<pk>[0-9]+)/edit$', view=views.ProductTypeUpdate.as_view(), name='product_type_edit'),
+    url(r'^productType/(?P<pk>[0-9]+)/delete$', view=views.ProductTypeDelete.as_view(), name='product_type_delete'),
 
     # TODO: create option to manually make an order?
     url(r'^order/(?P<pk>[0-9]+)$', view=views.ConceptOrderView.as_view(), name='order_view'),
@@ -34,5 +38,4 @@ urlpatterns = [
     url(r'^order/drink/(?P<pk>[0-9]+)/line/create', view=views.ConceptOrderDrinkLineCreateView.as_view(), name='order_drink_line_create'),
     url(r'^order/drink/line/(?P<pk>[0-9]+)/edit', view=views.ConceptOrderDrinkLineEditView.as_view(), name='order_drink_line_edit'),
     url(r'^order/drink/line/(?P<pk>[0-9]+)/delete', view=views.ConceptOrderDrinkLineDeleteView.as_view(), name='order_drink_line_delete'),
-
 ]

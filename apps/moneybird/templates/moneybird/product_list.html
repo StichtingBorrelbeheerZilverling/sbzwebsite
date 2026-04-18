@@ -3,7 +3,7 @@
 
 {% block content %}
     <h1>
-        Moneybird/Alexia products
+        Moneybird/Alexia Products
         <button class="btn btn-secondary" data-toggle="modal" data-target="#create-Product">
             + Create
         </button>
@@ -13,7 +13,8 @@
         <thead>
         <tr>
             <th colspan="2">Alexia Name</th>
-            <th colspan="2">Moneybird Name</th>
+            <th colspan="1">Product Type</th>
+            <th colspan="1">Moneybird ID</th>
             <th><!-- Buttons --></th>
         </tr>
         </thead>
@@ -22,8 +23,8 @@
             <tr>
                 <td>{{ product.alexia_id }}</td>
                 <td>{{ product.alexia_name }}</td>
+                <td>{{ product.product_type }}</td>
                 <td>{{ product.moneybird_id }}</td>
-                <td>{{ product.moneybird_name }}</td>
                 <td>
                     <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
                             data-target="#edit-Product-{{ product.pk }}">

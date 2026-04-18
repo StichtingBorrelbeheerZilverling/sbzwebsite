@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
-from pyexpat.errors import messages
 
 import requests
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.contrib import messages
 
 import settings
 
@@ -99,7 +99,6 @@ class Moneybird:
         Settings.set('access_token', self.access_token)
         Settings.set('token_created_at', data['created_at'])
 
-
     def _get(self, method):
         response = requests.get(Moneybird.BASE_URL + "api/v2/" + method, headers={
             'Authorization': 'Bearer {}'.format(self.access_token),
@@ -180,6 +179,6 @@ class MoneybirdOrder:
         return {
             "contact_id": self.contact_id,
             "reference": self.reference,
-            # "prices_are_incl_tax": self.customer_vat_type,  # Currently not supported
+            # "prices_are_incl_tax": self.customer_vat_type,  #TODO: Fix incl/excl vat for different customers
             "details_attributes": lines,
         }
