@@ -1,11 +1,10 @@
-import json
 from datetime import datetime
+import time
 from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.urls import reverse_lazy
@@ -15,7 +14,7 @@ from django.views.generic.detail import DetailView
 
 from apps.moneybird.defaults import make_orderline, make_order
 from apps.moneybird.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
-from apps.moneybird.tools_moneybird import MoneybirdOrderLine, MoneybirdOrder, Moneybird
+from apps.moneybird.tools_moneybird import Moneybird
 from apps.util.profiling import profile
 import settings
 from .models import Settings, Customer, Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
@@ -29,8 +28,8 @@ class Index(LoginRequiredMixin, ListView):
 
         context['create_order_form'] = FileForm()
 
-        context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
-        context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
+        # context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
+        # context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
 
         return context
 
@@ -164,16 +163,74 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     success_url = reverse_lazy('moneybird:index')
 
     def _create_missing_objects(self, data):
-        for customer in data['drinks'].keys():
-            if not Customer.objects.filter(alexia_name=customer).exists():
-                customer_obj = Customer()
-                customer_obj.alexia_name = customer
-                customer_obj.save()
+        moneybird, do_redirect = Moneybird.instantiate_or_redirect(self.request)
+        if do_redirect: return do_redirect
+
+        administration = moneybird.get_administration()
+
+        for customer_name in data['drinks'].keys():
+            customer, _ = Customer.objects.get_or_create(alexia_name=customer_name)
+            customer.alexia_name = customer_name
+            
+            if customer.moneybird_id:
+                response = moneybird.get_customer(administration, customer.moneybird_id)
+                if response.status_code == 404:
+                    messages.error(self.request, "Moneybird ID does not exist. Removing Moneybird ID for customer {}.".format(customer_name))
+                    customer.moneybird_id = 0
+                    customer.save()
+
+                else:
+                    # TODO: Check if all fields are the same, consider moving to other helper function
+                    moneybird_customer = response.json()
+                    if moneybird_customer['company_name'] != customer_name:
+                        messages.warning(self.request, "Customer {} has a different name in Moneybird ({}). Consider updating it.".format(customer_name, moneybird_customer['company_name']))
+        
+            if customer.moneybird_id is None or customer.moneybird_id == 0:
+                response = moneybird.create_customer(administration, customer.as_moneybird_dict())
+                if response.status_code == 201:
+                    customer.moneybird_id = response.json()['id']
+                    messages.success(self.request, "Customer {} created successfully in Moneybird.".format(customer_name))
+                else:
+                    messages.error(self.request, "Failed to create customer {} in Moneybird: {}".format(customer, response.text))
+
+            customer.save()
+
+            
 
         for product_id, product_name in data['products'].items():
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
             product.alexia_name = product_name
+            product.ledger_account_id = "409681474380367705"
+            product.vat_rate_id = "409681474988541809"
             product.save()
+
+            if product.moneybird_id:
+                response = moneybird.get_product(administration, product.moneybird_id)
+                if response.status_code == 404:
+                    messages.error(self.request, "Moneybird ID does not exist. Removing Moneybird ID for product {}.".format(product_name))
+                    product.moneybird_id = 0
+                    product.save()
+
+                else:
+                    # TODO: Check if all fields are the same, consider moving to other helper function
+                    moneybird_product = response.json()
+                    if moneybird_product['title'] != product_name:
+                        messages.warning(self.request, "Product {} has a different name in Moneybird ({}). Consider updating it.".format(product_name, moneybird_product['title']))
+            
+            if product.moneybird_id is None or product.moneybird_id == 0:
+                response = moneybird.create_product(administration, product.as_moneybird_dict())
+                if response.status_code == 201:
+                    print('made new product: {}'.format(response.json()))
+                    product.moneybird_id = response.json()['id']
+                    messages.success(self.request, "Product {} created successfully in Moneybird.".format(product_name))
+                else:
+                    print('failed to make new product: {}'.format(response.json()))
+                    print('request: {}'.format(response.request.body))
+                    messages.error(self.request, "Failed to create product {} in Moneybird: {}".format(product_name, response.text))
+            
+            time.sleep(0.1) # Avoid hitting rate limits
+            product.save()
+
 
     def form_valid(self, form):
         data = form.cleaned_json
@@ -213,13 +270,12 @@ class OrdersSendAllView(LoginRequiredMixin, View):
     def post(self, request):
         moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
         if do_redirect: return do_redirect
-        "https://moneybird.com/oauth/authorize?client_id=&redirect_uri=http://127.0.0.1:8000/moneybird/code&response_type=code&scope=sales_invoices"
 
         orders = ConceptOrder.objects.all()
 
         for order in orders:
             moneybird_order = order.as_moneybird()
-            response = moneybird.create_invoice(moneybird.get_administrations().json()[0]['id'], moneybird_order)
+            response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
             if response.status_code == 402:
                 messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
             elif response.status_code == 201:
