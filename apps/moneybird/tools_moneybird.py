@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from json import JSONDecodeError
+from pyexpat.errors import messages
 
 import requests
 from django.shortcuts import redirect
@@ -40,7 +41,7 @@ class Moneybird:
             return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
                 settings.mb_client_id, 
                 request.build_absolute_uri(reverse('moneybird:code')),
-                "sales_invoices",
+                "sales_invoices settings",
             ))
 
     def _auth(self):
@@ -66,7 +67,7 @@ class Moneybird:
                 raise Exception("Tokens are not present; request a new authorization code.")
         
         # Test if Access token is valid
-        response = self.get_administrations()
+        response = self._get("administrations")
         if response.status_code != 200:
             # Remove Access token and try again
             self.access_token = None
@@ -105,7 +106,9 @@ class Moneybird:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         })
-
+        if response.status_code == 429:
+            # Rate limit
+            messages.error(self.request, "Moneybird API rate limit exceeded. Please try again later.")
         return response
 
     def _post(self, method, data):
@@ -113,22 +116,28 @@ class Moneybird:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         }, json=data)
-
+        if response.status_code == 429:
+            # Rate limit
+            messages.error(self.request, "Moneybird API rate limit exceeded. Please try again later.")
         return response
 
-    def get_administrations(self):
-        return self._get("administrations")
+    def get_administration(self):
+        return self._get("administrations").json()[0]['id']
 
     def create_invoice(self, administration, order):
         return self._post("{}/sales_invoices".format(administration), {'sales_invoice': order.as_dict()})
     
+    def get_product(self, administration, product_id):
+        return self._get("{}/products/{}".format(administration, product_id))
+
     def create_product(self, administration, product):
-        response = self._post("{}/products".format(administration), {'product': product.as_dict()})
-        if response.status_code == 201:
-            product.moneybird_id = response.json()['id']
-        return response
+        return self._post("{}/products".format(administration), {'product': product})
+    
+    def get_customer(self, administration, customer_id):
+        return self._get("{}/contacts/customer_id/{}".format(administration, customer_id))
 
-
+    def create_customer(self, administration, customer):
+        return self._post("{}/contacts".format(administration), {'contact': customer})
 
 
 class MoneybirdOrderLine:
@@ -174,20 +183,4 @@ class MoneybirdOrder:
             "reference": self.reference,
             # "prices_are_incl_tax": self.customer_vat_type,  # Currently not supported
             "details_attributes": lines,
-        }
-
-# TODO: Add tax rate and ledger account (so drink type, e.g. beer, wine) to products
-class MoneybirdProduct:
-    def __init__(self, moneybird_id, moneybird_name, tax_rate_id, ledger_account_id):
-        self.moneybird_id = moneybird_id
-        self.moneybird_name = moneybird_name
-        self.tax_rate_id = tax_rate_id
-        self.ledger_account_id = ledger_account_id
-
-    def as_dict(self):
-        return {
-            "price": 0,  # Moneybird requires a price
-            "ledger_account_id": self.ledger_account_id, # Moneybird requires a ledger account id
-            "title": self.moneybird_name,
-            "tax_rate_id": self.tax_rate_id
         }
