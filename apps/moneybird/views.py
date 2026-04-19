@@ -10,8 +10,10 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView, ListView, DeleteView, CreateView, UpdateView, View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
+from django.db.models import Q
 
-from apps.moneybird.forms import FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
+
+from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
@@ -26,8 +28,19 @@ class Index(LoginRequiredMixin, ListView):
         context['create_order_form'] = FileForm()
         context['create_order'] = OrderForm()
 
-        # context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
-        # context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact=""))
+        context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact="") | Q(product_type__isnull=True))
+        context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact="") | Q(vat_type__isnull=True) | Q(vat_type__exact=""))
+        context['new_product_types'] = ProductType.objects.filter(Q(ledger_account_id__isnull=True) | Q(ledger_account_id__exact=""))
+
+        for product in context['new_products']:
+            product.edit_form = ProductForm(instance=product)
+            product.edit_modal_id = f"edit-product-{product.pk}"
+        for customer in context['new_customers']:
+            customer.edit_form = CustomerForm(instance=customer)
+            customer.edit_modal_id = f"edit-customer-{customer.pk}"
+        for product_type in context['new_product_types']:
+            product_type.edit_form = ProductTypeForm(instance=product_type)
+            product_type.edit_modal_id = f"edit-product-type-{product_type.pk}"
 
         return context
 
@@ -331,8 +344,9 @@ class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
 
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
     model = Customer
+    form_class = CustomerForm
+    template_name = 'moneybird/customer_form.html'
     success_url = reverse_lazy('moneybird:index')
-    fields = '__all__'
 
 
 class Products(LoginRequiredMixin, ListView):
@@ -351,6 +365,7 @@ class Products(LoginRequiredMixin, ListView):
 
 
 class ProductCreate(LoginRequiredMixin, CreateView):
+    model = Product
     form_class = ProductForm
     template_name = 'moneybird/product_form.html'
     success_url = reverse_lazy('moneybird:products')
@@ -369,7 +384,7 @@ class ProductDelete(LoginRequiredMixin, DeleteView):
 
 class ProductTypes(LoginRequiredMixin, ListView):
     model = ProductType
-    ordering = ['product_type']
+    ordering = ['name']
     context_object_name = "product_type_list"
     template_name = "moneybird/product_type_list.html"
 
@@ -385,6 +400,7 @@ class ProductTypes(LoginRequiredMixin, ListView):
 
 
 class ProductTypeCreate(LoginRequiredMixin, CreateView):
+    model = ProductType
     form_class = ProductTypeForm
     template_name = 'moneybird/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')
@@ -393,9 +409,12 @@ class ProductTypeCreate(LoginRequiredMixin, CreateView):
 class ProductTypeUpdate(LoginRequiredMixin, UpdateView):
     model = ProductType
     form_class = ProductTypeForm
+    template_name = 'moneybird/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')
 
 
 class ProductTypeDelete(LoginRequiredMixin, DeleteView):
+    # TODO error handling when deleting a product type that is still in use by a product
     model = ProductType
+    template_name = 'moneybird/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')

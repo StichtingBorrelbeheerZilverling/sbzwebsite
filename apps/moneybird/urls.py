@@ -9,8 +9,7 @@ urlpatterns = [
     
     url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveAuthCode.as_view(), name='code'),
 
-    # TODO: Make Customers editable via interface
-    url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_update'),
+    url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_edit'),
 
     url(r'^products$', view=views.Products.as_view(), name='products'),
     url(r'^product/add$', view=views.ProductCreate.as_view(), name='product_add'),

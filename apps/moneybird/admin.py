@@ -7,18 +7,16 @@ class SettingsAdmin(admin.ModelAdmin):
     list_display = ('key', 'value')
     list_editable = ('value',)
 
-
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('alexia_id', 'alexia_name', 'moneybird_id', 'product_type')
     list_editable = ('moneybird_id', 'product_type')
-
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('alexia_name','moneybird_id','vat_type')
     list_editable = ('moneybird_id', 'vat_type')
 
 class ProductTypeAdmin(admin.ModelAdmin):
-    list_display = ('product_type', 'ledger_account_id', 'vat_rate')
+    list_display = ('name', 'ledger_account_id', 'vat_rate')
     list_editable = ('ledger_account_id', 'vat_rate')
 
 class VatRateAdmin(admin.ModelAdmin):

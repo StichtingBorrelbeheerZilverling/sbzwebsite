@@ -5,7 +5,7 @@ from django.forms import ModelForm, Form, CharField
 from django import forms
 
 
-from apps.moneybird.models import Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
+from apps.moneybird.models import Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 
 
@@ -110,16 +110,37 @@ class OrderForm(ModelForm):
         fields = ['customer']
 
 
+class CustomerForm(ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['moneybird_id', 'vat_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['vat_type'].required = True
+        self.fields['vat_type'].empty_label = None
+    
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product
         fields = ['alexia_id', 'alexia_name', 'moneybird_id', 'product_type']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product_type'].required = True
+        self.fields['product_type'].empty_label = None
+
 
 class ProductTypeForm(ModelForm):
     class Meta:
         model = ProductType
-        fields = ['product_type', 'ledger_account_id', 'vat_rate']
+        fields = ['name', 'ledger_account_id', 'vat_rate']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['vat_rate'].required = True
+        self.fields['vat_rate'].empty_label = None
 
 
 class ConceptOrderDrinkForm(ModelForm):

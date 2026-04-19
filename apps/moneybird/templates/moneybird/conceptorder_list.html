@@ -14,40 +14,35 @@
     {% endfor %}
     {% endif %}
     
-    {% if new_products or new_customers %}
-    <div class="alert alert-danger">
-    {{ message }}
-</div>
-    <h1>Unresolved issues</h1>
-    <p>
-        Please resolve the following issues before sending any pending invoices:
-    </p>
-    <ul>
-    {% for product in new_products %}
-        <li>
-            {% url 'moneybird:product_edit' product.pk as product_url %}
-            {% blocktrans %}
-                Please map the new product "<a href="{{ product_url }}">{{ product }}</a>" to a Moneybird ID and name.
-            {% endblocktrans %}
-        </li>
-    {% endfor %}
-    {% for customer in new_customers %}
-        <li>
-            {% url 'moneybird:customer_edit' customer.pk as customer_url %}
-            {% blocktrans %}
-                Please map the new customer "<a href="{{ customer_url }}">{{ customer }}</a>" to a Moneybird ID.
-            {% endblocktrans %}
-        </li>
-    {% endfor %}
-    </ul>
+    {% if new_products or new_customers or new_product_types %}
+        <h1>Unresolved issues</h1>
+        <p>
+            Please resolve the following issues before sending any pending invoices:
+        </p>
+        <ul>
+        {% for product in new_products %}
+            <li>
+                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product.edit_modal_id }}">{{ product }}</a>" to a Moneybird ID and Product Type.
+            </li>
+        {% endfor %}
+        {% for customer in new_customers %}
+            <li>
+                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ customer.edit_modal_id }}">{{ customer }}</a>" to a Moneybird ID and a VAT Type.
+            </li>
+        {% endfor %}
+        {% for product_type in new_product_types %}
+            <li>
+                Please map the new product type "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product_type.edit_modal_id }}">{{ product_type }}</a>" to a Ledger Account ID.
+            </li>
+        {% endfor %}
+        </ul>
     {% endif %}
 
     <h1>
         Pending invoices
     </h1>
-
     <p>
-        {% if conceptorder_list and not new_products and not new_customers %}
+        {% if conceptorder_list and not new_products and not new_customers and not new_product_types %}
             <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send-all">
                 Send All
             </button>
@@ -116,14 +111,19 @@
         {% bootstrap_delete_modal order 'moneybird:order_delete' order.pk %}
     {% endfor %}
 
-    {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
+    {% for product in new_products %}
+        {% bootstrap_form_modal product.edit_modal_id "Edit Product" product.edit_form 'moneybird:product_edit' product.pk %}
+    {% endfor %}
+    {% for customer in new_customers %}
+        {% bootstrap_form_modal customer.edit_modal_id "Edit Customer" customer.edit_form 'moneybird:customer_edit' customer.pk %}
+    {% endfor %}
+    {% for product_type in new_product_types %}
+        {% bootstrap_form_modal product_type.edit_modal_id "Edit Product Type" product_type.edit_form 'moneybird:product_type_edit' product_type.pk %}
+    {% endfor %}
 
-    {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
     {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
-
     {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
 
     {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
-
     {% bootstrap_confirm_submit_form "send-selected" "Are you sure you want to send the selected pending invoices?" "moneybird:orders_send_selected" form_id="send-selected-form" %}
 {% endblock %}

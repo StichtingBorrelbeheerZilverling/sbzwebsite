@@ -39,10 +39,10 @@ class Customer(models.Model):
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
     moneybird_id = models.CharField(max_length=18, blank=True, null=False)
     vat_type = models.CharField(max_length=1, blank=False, choices=VAT_TYPE, default='1')
-    # self.invoice_workflow_id = invoice_workflow_id # Currently not supported
+    # self.invoice_workflow_id = invoice_workflow_id # TODO Currently not supported
 
     def get_absolute_url(self):
-        return reverse('moneybird:customer_update', args=(self.pk,))
+        return reverse('moneybird:customer_edit', args=(self.pk,))
 
     def __str__(self):
         return self.alexia_name
@@ -135,7 +135,7 @@ class Product(models.Model):
     alexia_id = models.IntegerField(unique=True)
     alexia_name = models.CharField(max_length=100, blank=False)
     moneybird_id = models.CharField(max_length=18, blank=True)
-    product_type = models.ForeignKey("moneybird.ProductType", on_delete=models.PROTECT)
+    product_type = models.ForeignKey("moneybird.ProductType", on_delete=models.PROTECT, blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse('moneybird:product_edit', args=(self.pk,))
@@ -146,7 +146,7 @@ class Product(models.Model):
     def as_moneybird_dict(self):
         return {
             "price": 0,  # Moneybird requires a price
-            "ledger_account_id": self.product_type.ledger_account_id, # Moneybird requires a ledger account id
+            "ledger_account_id": self.product_type.ledger_account_id,
             "title": self.alexia_name,
             "vat_rate_id": self.product_type.vat_rate.moneybird_id,
         }
@@ -156,18 +156,18 @@ class Product(models.Model):
 
 
 class ProductType(models.Model):
-    product_type = models.CharField(max_length=255, unique=True, blank=False)
+    name = models.CharField(max_length=255, unique=True, blank=False)
     ledger_account_id = models.CharField(max_length=18, blank=True)
-    vat_rate = models.ForeignKey("moneybird.VatRate", on_delete=models.PROTECT)
+    vat_rate = models.ForeignKey("moneybird.VatRate", on_delete=models.PROTECT, blank=False)
 
     def get_absolute_url(self):
         return reverse('moneybird:product_type_edit', args=(self.pk,))
 
     def __str__(self):
-        return self.product_type
+        return self.name
 
     class Meta:
-        ordering = ['product_type']
+        ordering = ['name']
 
 
 class VatRate(models.Model):
