@@ -47,9 +47,7 @@ class Index(LoginRequiredMixin, ListView):
 
 class SaveAuthCode(LoginRequiredMixin, RedirectView):
     def dispatch(self, request, *args, **kwargs):
-        if 'code' in kwargs and kwargs['code']:
-            Settings.set('auth_code', unquote(kwargs['code']))
-        elif 'code' in request.GET and request.GET['code']:
+        if 'code' in request.GET and request.GET['code']:
             Settings.set('auth_code', request.GET['code'])
         return super(SaveAuthCode, self).dispatch(request, *args, **kwargs)
 
@@ -416,5 +414,4 @@ class ProductTypeUpdate(LoginRequiredMixin, UpdateView):
 class ProductTypeDelete(LoginRequiredMixin, DeleteView):
     # TODO error handling when deleting a product type that is still in use by a product
     model = ProductType
-    template_name = 'moneybird/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')

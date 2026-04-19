@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load bootstrap_form %}
+
+{% block content %}
+{% endblock %}
+
+{% block modals %}
+    {% bootstrap_delete_modal object 'moneybird:order_delete' object.pk %}
+    <script>
+        // Auto-open the delete modal on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById('delete-ConceptOrder-{{ object.pk }}');
+            if (modal) {
+                $('#delete-ConceptOrder-{{ object.pk }}').modal('show');
+            }
+        });
+    </script>
+{% endblock %}

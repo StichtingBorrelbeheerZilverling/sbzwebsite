@@ -7,7 +7,7 @@ app_name = 'moneybird'
 urlpatterns = [
     url(r'^$', view=views.Index.as_view(), name='index'),
     
-    url(r'^code(/(?P<code>[0-9]+))?$', view=views.SaveAuthCode.as_view(), name='code'),
+    url(r'^code$', view=views.SaveAuthCode.as_view(), name='code'),
 
     url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_edit'),
 
@@ -21,7 +21,6 @@ urlpatterns = [
     url(r'^product/type/(?P<pk>[0-9]+)/edit$', view=views.ProductTypeUpdate.as_view(), name='product_type_edit'),
     url(r'^product/type/(?P<pk>[0-9]+)/delete$', view=views.ProductTypeDelete.as_view(), name='product_type_delete'),
 
-    # TODO: create option to only send selected orders
     url(r'^order/(?P<pk>[0-9]+)$', view=views.ConceptOrderView.as_view(), name='order_view'),
     url(r'^order/(?P<pk>[0-9]+)/delete$', view=views.ConceptOrderDelete.as_view(), name='order_delete'),
     url(r'^order/createFromFile$', view=views.OrdersCreateFromFile.as_view(), name='orders_create_from_file'),
