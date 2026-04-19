@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'debug_toolbar',
 
     'apps.util.apps.UtilConfig',
     'apps.general.apps.GeneralConfig',
@@ -62,7 +63,11 @@ MIDDLEWARE = [
     # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
+
+INTERNAL_IPS = ['127.0.0.1',]
+
 
 ROOT_URLCONF = 'urls'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

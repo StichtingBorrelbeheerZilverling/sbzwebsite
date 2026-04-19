@@ -12,9 +12,6 @@ urlpatterns = [
     # TODO: Make Customers editable via interface
     url(r'^customer/(?P<pk>[0-9]+)/edit$', view=views.CustomerUpdate.as_view(), name='customer_update'),
 
-    # TODO: Make Settings editable via interface
-    url(r'^settings/(?P<pk>[0-9]+)/edit$', view=views.SettingsUpdate.as_view(), name='settings_update'),
-
     url(r'^products$', view=views.Products.as_view(), name='products'),
     url(r'^product/add$', view=views.ProductCreate.as_view(), name='product_add'),
     url(r'^product/(?P<pk>[0-9]+)/edit$', view=views.ProductUpdate.as_view(), name='product_edit'),

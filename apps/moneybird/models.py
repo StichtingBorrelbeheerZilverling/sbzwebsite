@@ -29,9 +29,6 @@ class Settings(models.Model):
         setting.value = value
         setting.save()
 
-    def get_absolute_url(self):
-        return reverse('moneybird:settings_update', args=(self.pk,))
-
 
 class Customer(models.Model):
     VAT_TYPE = (

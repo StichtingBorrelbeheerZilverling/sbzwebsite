@@ -335,12 +335,6 @@ class CustomerUpdate(LoginRequiredMixin, UpdateView):
     fields = '__all__'
 
 
-class SettingsUpdate(LoginRequiredMixin, UpdateView):
-    model = Settings
-    success_url = reverse_lazy('moneybird:index')
-    fields = '__all__'
-
-
 class Products(LoginRequiredMixin, ListView):
     model = Product
     ordering = ['alexia_id']
