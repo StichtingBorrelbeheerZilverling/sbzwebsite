@@ -104,6 +104,12 @@ class FileForm(forms.Form):
         model = ConceptOrder
 
 
+class OrderForm(ModelForm):
+    class Meta:
+        model = ConceptOrder
+        fields = ['customer']
+
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product

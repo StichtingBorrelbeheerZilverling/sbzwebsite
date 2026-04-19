@@ -156,7 +156,7 @@ class MoneybirdOrderLine:
 
 
 class MoneybirdOrder:
-    # TODO add support for different workflows for different associations
+    # TODO add support for different workflows for different associations (for incl/excl vat)
     def __init__(self,
                  contact_id,
                  reference,

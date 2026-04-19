@@ -88,6 +88,16 @@ def bootstrap_confirm_modal(context, name, body, action, *args):
         "csrf_token": context.get("csrf_token", None),
     }))
 
+@register.simple_tag(takes_context=True)
+def bootstrap_confirm_submit_form(context, name, body, action, form_id=None, *args):
+    return mark_safe(render_to_string("bootstrap_form/modal_confirm_submit_form.html", {
+        "name": name,
+        "body": body,
+        "action": reverse(action, args=args),
+        "form_id": form_id,
+        "csrf_token": context.get("csrf_token", None),
+    }))
+
 
 @register.simple_tag(takes_context=True)
 def bootstrap_form_modal(context, id, title, form, action, *args):
