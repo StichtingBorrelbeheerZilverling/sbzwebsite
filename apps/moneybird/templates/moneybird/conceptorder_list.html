@@ -119,6 +119,9 @@
     {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
 
     {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
+    {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
+
+    {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
 
     {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
 
