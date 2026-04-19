@@ -11,6 +11,7 @@ from django.views.generic import FormView, ListView, DeleteView, CreateView, Upd
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
@@ -277,7 +278,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 class OrdersCreate(LoginRequiredMixin, FormView):
     form_class = OrderForm
-    template_name = 'moneybird/order_form.html'
+    template_name = 'moneybird/conceptorder_form.html'
 
     def form_valid(self, form):
         customer = form.cleaned_data['customer']
@@ -379,6 +380,13 @@ class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
     success_url = reverse_lazy('moneybird:products')
 
+    def post(self, request, *args, **kwargs):
+        try:
+            return super(ProductDelete, self).post(request, *args, **kwargs)
+        except ProtectedError:
+            messages.error(request, "Cannot delete this product because it is still used by one or more concept order lines.")
+            return redirect('moneybird:products')
+
 
 class ProductTypes(LoginRequiredMixin, ListView):
     model = ProductType
@@ -412,6 +420,12 @@ class ProductTypeUpdate(LoginRequiredMixin, UpdateView):
 
 
 class ProductTypeDelete(LoginRequiredMixin, DeleteView):
-    # TODO error handling when deleting a product type that is still in use by a product
     model = ProductType
     success_url = reverse_lazy('moneybird:product_types')
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super(ProductTypeDelete, self).post(request, *args, **kwargs)
+        except ProtectedError:
+            messages.error(request, "Cannot delete this product type because it is still used by one or more products.")
+            return redirect('moneybird:product_types')

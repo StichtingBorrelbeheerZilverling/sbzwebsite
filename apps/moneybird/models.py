@@ -179,5 +179,3 @@ class VatRate(models.Model):
 
     class Meta:
         ordering = ['vat_rate']
-
-# TODO: make class for moneybird ledgers?

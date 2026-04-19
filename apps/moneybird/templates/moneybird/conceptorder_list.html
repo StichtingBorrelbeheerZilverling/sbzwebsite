@@ -17,7 +17,7 @@
     {% if new_products or new_customers or new_product_types %}
         <h1>Unresolved issues</h1>
         <p>
-            Please resolve the following issues before sending any pending invoices:
+            Please resolve the following issues before sending any pending concept orders:
         </p>
         <ul>
         {% for product in new_products %}
@@ -39,7 +39,7 @@
     {% endif %}
 
     <h1>
-        Pending invoices
+        Pending concept orders
     </h1>
     <p>
         {% if conceptorder_list and not new_products and not new_customers and not new_product_types %}
@@ -87,7 +87,7 @@
             </tr>
         {% empty %}
             <tr>
-                <td><emph>There are no pending invoices right now.</emph></td>
+                <td><emph>There are no pending concept orders right now.</emph></td>
             </tr>
         {% endfor %}
         </tbody>
@@ -121,9 +121,9 @@
         {% bootstrap_form_modal product_type.edit_modal_id "Edit Product Type" product_type.edit_form 'moneybird:product_type_edit' product_type.pk %}
     {% endfor %}
 
-    {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
-    {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
+    {% bootstrap_form_modal 'file-order' "Create concept orders from File" create_order_form 'moneybird:orders_create_from_file'%}
+    {% bootstrap_form_modal 'manual-order' "Create concept order manually" create_order 'moneybird:orders_create'%}
 
-    {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
-    {% bootstrap_confirm_submit_form "send-selected" "Are you sure you want to send the selected pending invoices?" "moneybird:orders_send_selected" form_id="send-selected-form" %}
+    {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending concept orders?" "moneybird:orders_send_all" %}
+    {% bootstrap_confirm_submit_form "send-selected" "Are you sure you want to send the selected pending concept orders?" "moneybird:orders_send_selected" form_id="send-selected-form" %}
 {% endblock %}
