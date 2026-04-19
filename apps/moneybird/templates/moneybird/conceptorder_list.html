@@ -48,18 +48,27 @@
 
     <p>
         {% if conceptorder_list and not new_products and not new_customers %}
-            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send">
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send-all">
                 Send All
             </button>
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send-selected">
+                Send Selected
+            </button>
         {% endif %}
-        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#create-ConceptOrder">
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#form-file-order">
             + From File
+        </button>
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#form-manual-order">
+            + Create Manually
         </button>
     </p>
 
+    <form id="send-selected-form" method="POST" action="{% url 'moneybird:orders_send_selected' %}">
+    {% csrf_token %}
     <table class="table">
         <thead>
         <tr>
+            <th><!-- Checkbox --></th>
             <th>Date</th>
             <th>Customer</th>
             <th>Drink count</th>
@@ -69,6 +78,7 @@
         <tbody>
         {% for order in conceptorder_list %}
             <tr>
+                <td><input type="checkbox" name="selected_orders" value="{{ order.pk }}"></td>
                 <td>{{ order.date|date:"d-m-Y" }}</td>
                 <td>{{ order.customer }}</td>
                 <td>{{ order.conceptorderdrink_set.all|length }}</td>
@@ -87,6 +97,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </form>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
@@ -105,7 +116,11 @@
         {% bootstrap_delete_modal order 'moneybird:order_delete' order.pk %}
     {% endfor %}
 
-    {% bootstrap_create_modal create_order_form 'moneybird:orders_create_from_file' %}
+    {% bootstrap_form_modal 'file-order' "Create invoice from File" create_order_form 'moneybird:orders_create_from_file'%}
 
-    {% bootstrap_confirm_modal "send" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
+    {% bootstrap_form_modal 'manual-order' "Create invoice manually" create_order 'moneybird:orders_create'%}
+
+    {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending invoices?" "moneybird:orders_send_all" %}
+
+    {% bootstrap_confirm_submit_form "send-selected" "Are you sure you want to send the selected pending invoices?" "moneybird:orders_send_selected" form_id="send-selected-form" %}
 {% endblock %}

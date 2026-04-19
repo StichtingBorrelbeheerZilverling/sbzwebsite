@@ -12,7 +12,7 @@ def profile(func):
 
         pr.disable()
         stats = pstats.Stats(pr).sort_stats('cumulative')
-        stats.print_stats()
+        # stats.print_stats()
 
         return result
 

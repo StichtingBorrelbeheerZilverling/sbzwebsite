@@ -20,16 +20,18 @@ urlpatterns = [
     url(r'^product/(?P<pk>[0-9]+)/edit$', view=views.ProductUpdate.as_view(), name='product_edit'),
     url(r'^product/(?P<pk>[0-9]+)/delete$', view=views.ProductDelete.as_view(), name='product_delete'),
 
-    url(r'^productTypes$', view=views.ProductTypes.as_view(), name='product_types'),
-    url(r'^productType/add$', view=views.ProductTypeCreate.as_view(), name='product_type_add'),
-    url(r'^productType/(?P<pk>[0-9]+)/edit$', view=views.ProductTypeUpdate.as_view(), name='product_type_edit'),
-    url(r'^productType/(?P<pk>[0-9]+)/delete$', view=views.ProductTypeDelete.as_view(), name='product_type_delete'),
+    url(r'^product/types$', view=views.ProductTypes.as_view(), name='product_types'),
+    url(r'^product/type/add$', view=views.ProductTypeCreate.as_view(), name='product_type_add'),
+    url(r'^product/type/(?P<pk>[0-9]+)/edit$', view=views.ProductTypeUpdate.as_view(), name='product_type_edit'),
+    url(r'^product/type/(?P<pk>[0-9]+)/delete$', view=views.ProductTypeDelete.as_view(), name='product_type_delete'),
 
-    # TODO: create option to manually make an order?
+    # TODO: create option to only send selected orders
     url(r'^order/(?P<pk>[0-9]+)$', view=views.ConceptOrderView.as_view(), name='order_view'),
     url(r'^order/(?P<pk>[0-9]+)/delete$', view=views.ConceptOrderDelete.as_view(), name='order_delete'),
     url(r'^order/createFromFile$', view=views.OrdersCreateFromFile.as_view(), name='orders_create_from_file'),
+    url(r'^order/create$', view=views.OrdersCreate.as_view(), name='orders_create'),
     url(r'^order/sendAll$', view=views.OrdersSendAllView.as_view(), name='orders_send_all'),
+    url(r'^order/sendSelected$', view=views.OrdersSendSelectedView.as_view(), name='orders_send_selected'),
 
     url(r'^order/(?P<pk>[0-9]+)/drink/create$', view=views.ConceptOrderDrinkCreateView.as_view(), name='order_drink_create'),
     url(r'^order/drink/(?P<pk>[0-9]+)/edit$', view=views.ConceptOrderDrinkEditView.as_view(), name='order_drink_edit'),

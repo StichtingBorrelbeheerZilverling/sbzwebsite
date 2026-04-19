@@ -62,7 +62,7 @@ class Customer(models.Model):
 class ConceptOrder(models.Model):
     date = models.DateField()
     customer = models.ForeignKey("moneybird.Customer", on_delete=models.PROTECT)
-    sent = models.BooleanField(default=False) # TODO: implement that this is used?
+    sent = models.BooleanField(default=False) # TODO: implement that this is used or remove
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -112,7 +112,6 @@ class ConceptOrderDrink(models.Model):
         order_lines = []
 
         for line in self.conceptorderdrinkline_set.all():
-            # TODO: Rewrite to moneybird
             order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.alexia_name),
                                                   product_id=line.product.moneybird_id,
                                                   quantity=line.amount))
@@ -147,7 +146,6 @@ class Product(models.Model):
     def __str__(self):
         return self.alexia_name
     
-    # TODO: Implement automatic ledger_account_id based on type of drink
     def as_moneybird_dict(self):
         return {
             "price": 0,  # Moneybird requires a price
@@ -160,7 +158,6 @@ class Product(models.Model):
         ordering = ['alexia_id']
 
 
-# TODO: make product types updatable/creatable/deletable
 class ProductType(models.Model):
     product_type = models.CharField(max_length=255, unique=True, blank=False)
     ledger_account_id = models.CharField(max_length=18, blank=True)
@@ -186,4 +183,4 @@ class VatRate(models.Model):
     class Meta:
         ordering = ['vat_rate']
 
-# TODO: make class for moneybird ledgers
+# TODO: make class for moneybird ledgers?
