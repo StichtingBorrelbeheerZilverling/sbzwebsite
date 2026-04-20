@@ -12,7 +12,8 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
-from apps.moneybird.tools_moneybird import Moneybird, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
+from apps.moneybird.tools_moneybird import Moneybird
+from apps.moneybird.exceptions import MoneybirdAPIException, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -118,6 +119,8 @@ class ConceptOrderDrinkEditView(LoginRequiredMixin, UpdateView):
 
 class ConceptOrderDrinkDeleteView(LoginRequiredMixin, DeleteView):
     model = ConceptOrderDrink
+    template_name = 'moneybird/forms/conceptorderdrink_confirm_delete.html'
+
 
     def get_success_url(self):
         return reverse('moneybird:order_view', kwargs={'pk': self.object.order.pk})
@@ -237,49 +240,15 @@ class OrdersCreate(LoginRequiredMixin, FormView):
 
 class OrdersSendAllView(LoginRequiredMixin, View):
     def post(self, request):
-        moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
-        if do_redirect: return do_redirect
+        return OrdersSendSelectedView.post(self, request, send_all=True)
 
-        try:
-            orders = ConceptOrder.objects.all()
-            moneybird.create_missing_customers(request, orders)
-            moneybird.create_missing_products(request, orders)
-
-        except MoneybirdRateLimitExceededException as e:
-            messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
-
-        except Exception as e:
-            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text if hasattr(e, 'response') else str(e)))
-
-        else:
-
-            for order in orders:
-                try:
-                    moneybird_order = order.as_moneybird()
-                    moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
-                
-                except MoneybirdAccountLimitReachedException:
-                    messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
-                    break
-
-                except MoneybirdRateLimitExceededException as e:
-                    messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
-                    break
-
-                except Exception as e:
-                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text if hasattr(e, 'response') else str(e)))
-
-                else:
-                    messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
-                    order.sent = True
-                    order.save()
-
-        return redirect('moneybird:index')
-    
 
 class OrdersSendSelectedView(LoginRequiredMixin, View):
-    def post(self, request):
-        selected_orders = request.POST.getlist("selected_orders")
+    def post(self, request, send_all=False):
+        if send_all:
+            selected_orders = ConceptOrder.objects.values_list('pk', flat=True)
+        else:
+            selected_orders = request.POST.getlist("selected_orders")
 
         if len(selected_orders) == 0:
             messages.warning(request, "No orders selected.")
@@ -296,8 +265,8 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
         except MoneybirdRateLimitExceededException as e:
             messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
 
-        except Exception as e:
-            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text if hasattr(e, 'response') else str(e)))
+        except MoneybirdAPIException as e:
+            messages.error(request, "Failed to create missing customers or products in Moneybird: {}: {}".format(e, e.response.text))
 
         else:
             for order in orders:
@@ -313,13 +282,12 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
                     messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
                     break
 
-                except Exception as e:
-                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text if hasattr(e, 'response') else str(e)))
+                except MoneybirdAPIException as e:
+                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text))
 
                 else:
                     messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
-                    order.sent = True
-                    order.save()
+                    order.delete()
 
         return redirect('moneybird:index')
 
@@ -330,6 +298,8 @@ class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
 
 
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
+    # TODO: Make this editable via interface as well
+    # TODO: make this update Moneybird customer as well (with vat_type and invoice_workflow_id)
     model = Customer
     form_class = CustomerForm
     template_name = 'moneybird/forms/customer_form.html'
@@ -359,6 +329,7 @@ class ProductCreate(LoginRequiredMixin, CreateView):
 
 
 class ProductUpdate(LoginRequiredMixin, UpdateView):
+     # TODO: make this update Moneybird customer as well (with product_type)
     model = Product
     form_class = ProductForm
     template_name = 'moneybird/forms/product_form.html'

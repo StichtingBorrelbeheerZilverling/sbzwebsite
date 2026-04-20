@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib import messages
 
 import settings
+from apps.moneybird.exceptions import *
 
 
 class Moneybird:
@@ -36,7 +37,7 @@ class Moneybird:
     def instantiate_or_redirect(request, *args, **kwargs):
         try:
             return Moneybird(request, *args, **kwargs), None
-        except MoneybirdTokensNotPresentException:
+        except TokensNotPresentException:
             return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
                 settings.mb_client_id, 
                 request.build_absolute_uri(reverse('moneybird:code')),
@@ -45,38 +46,40 @@ class Moneybird:
         except MoneybirdRateLimitExceededException as e:
             messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
             return None, redirect('moneybird:index')
-        except Exception as e:
+        except MoneybirdAPIException as e:
             messages.error(request, "An error occurred while connecting to the Moneybird API: {}".format(e.response.text))
             return None, redirect('moneybird:index')
 
     def _auth(self):
-        now = datetime.now(tz=timezone.utc)
 
         # Moneybird Access Tokens currently do not expire, but they may add this in the future.
-        if self.access_token_expiry:
+        now = datetime.now(tz=timezone.utc)
+        if not self.access_token_expiry:
+            self.access_token_expiry = now + timedelta(days=365)
+
+        try:
             if self.access_token and self.access_token_expiry > now:
-                pass
+                # Test if Access token is valid
+                self._get("administrations")
             elif self.access_token and self.access_token_expiry <= now:
+                # Request new Access token with Refresh token
                 self._request_token("refresh_token", self.refresh_token, "refresh_token")
+                # Test if new Access token is valid
+                self._get("administrations")
             elif self.auth_code:
+                # Request new Access token with Auth code
                 self._request_token("code", self.auth_code, "authorization_code")
             else:
-                raise MoneybirdTokensNotPresentException()
-        
-        else:
-            if self.access_token:
-                pass
-            elif self.auth_code:
-                self._request_token("code", self.auth_code, "authorization_code")
-            else:
-                raise MoneybirdTokensNotPresentException()
-        
-        # Test if Access token is valid
-        response = self._get("administrations")
-        if response.status_code != 200:
+                raise TokensNotPresentException("Access token and auth code are not present.")
+            
+        except MoneybirdNotAuthenticatedException:
             # Remove Access token and try again
             self.access_token = None
             self._auth()
+        except MoneybirdBadRequestException:
+            # Remove Access token and raise TokensNotPresentException
+            self.auth_code = None
+            raise TokensNotPresentException("Tokens are not valid, request new auth code.")
 
     def _request_token(self, token_type, token, grant_type):
         from apps.moneybird.models import Settings
@@ -88,8 +91,7 @@ class Moneybird:
             "grant_type": grant_type,
         })
 
-        if response.status_code != 200:
-            raise Exception("Unknown response from the Moneybird API:\nStatus code: {}\n{}".format(response.status_code, response.text))
+        self._response_handling(response)
 
         data = response.json()
 
@@ -110,10 +112,6 @@ class Moneybird:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         })
-        # print("Get Request Headers: {}".format(response.request.headers))
-        # print("Get Request Body: {}".format(response.request.body))
-        # print("Get Response: {}".format(response.json()))
-        # print()
 
         return self._response_handling(response)
 
@@ -122,11 +120,6 @@ class Moneybird:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         }, json=data)
-        
-        # print("Post Request Headers: {}".format(response.request.headers))
-        # print("Post Request Body: {}".format(response.request.body))
-        # print("Post Response: {}".format(response.json()))
-        # print()
 
         return self._response_handling(response)
     
@@ -135,16 +128,19 @@ class Moneybird:
             raise MoneybirdNotFoundException("Requested resource not found in Moneybird API", response=response)
 
         elif response.status_code == 402:
-            raise MoneybirdAccountLimitReachedException("Moneybird account limit reached.", response=response)
+            raise MoneybirdAccountLimitReachedException("Moneybird account limit reached", response=response)
         
         elif response.status_code == 429:
-            raise MoneybirdRateLimitExceededException("Moneybird API rate limit exceeded.", response=response)
+            raise MoneybirdRateLimitExceededException("Moneybird API rate limit exceeded", response=response)
+        
+        elif response.status_code == 401:
+            raise MoneybirdNotAuthenticatedException("Not authenticated to Moneybird API", response=response)
 
-        elif response.status_code in [400, 401, 403, 405, 406, 422]:
+        elif response.status_code in [400, 403, 405, 406, 422]:
             raise MoneybirdBadRequestException("Bad request to Moneybird API", response=response)
         
         elif response.status_code == 500:
-            raise MoneybirdInternalServerErrorException("Moneybird API returned an internal server error.", response=response)
+            raise MoneybirdInternalServerErrorException("Moneybird API returned an internal server error", response=response)
         
         return response
     
@@ -262,51 +258,3 @@ class MoneybirdOrder:
             "details_attributes": lines,
         }
     
-
-class MoneybirdNotFoundException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-    
-    def __str__(self):
-        return "MoneybirdNotFoundException: {}".format(super().__str__())
-
-class MoneybirdBadRequestException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-
-    def __str__(self):
-        return "MoneybirdBadRequestException: {}".format(super().__str__())
-
-class MoneybirdAccountLimitReachedException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-
-    def __str__(self):
-        return "MoneybirdAccountLimitReachedException: {}".format(super().__str__())
-
-class MoneybirdTokensNotPresentException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-
-    def __str__(self):
-        return "MoneybirdTokensNotPresentException: {}".format(super().__str__())
-
-class MoneybirdRateLimitExceededException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-
-    def __str__(self):
-        return "MoneybirdRateLimitExceededException: {}".format(super().__str__())
-
-class MoneybirdInternalServerErrorException(Exception):
-    def __init__(self, message, response=None):
-        super().__init__(message)
-        self.response = response
-
-    def __str__(self):
-        return "MoneybirdInternalServerErrorException: {}".format(super().__str__())
