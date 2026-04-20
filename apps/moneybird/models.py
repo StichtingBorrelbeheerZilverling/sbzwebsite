@@ -60,7 +60,6 @@ class Customer(models.Model):
 class ConceptOrder(models.Model):
     date = models.DateField()
     customer = models.ForeignKey("moneybird.Customer", on_delete=models.PROTECT)
-    sent = models.BooleanField(default=False) # TODO: implement that this is used or remove
 
     def __str__(self):
         return "Concept Order for {} ({})".format(
@@ -70,12 +69,11 @@ class ConceptOrder(models.Model):
 
     @property
     def reference(self):
-        MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         first = self.conceptorderdrink_set.first()
         last = self.conceptorderdrink_set.last()
 
-        first_month = MONTHS[first.date.month - 1]
-        last_month = MONTHS[last.date.month - 1]
+        first_month = first.date.strftime("%B")
+        last_month = last.date.strftime("%B")
 
         if first_month == last_month:
             return "Borrels {}".format(first_month)
@@ -110,7 +108,7 @@ class ConceptOrderDrink(models.Model):
         order_lines = []
 
         for line in self.conceptorderdrinkline_set.all():
-            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.alexia_name),
+            order_lines.append(MoneybirdOrderLine(description="{} ({}) - {}".format(self.name, self.date.strftime("%d %b"), line.product.alexia_name),
                                                   product_id=line.product.moneybird_id,
                                                   quantity=line.amount))
 
