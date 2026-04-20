@@ -11,7 +11,6 @@ from django.views.generic.detail import DetailView
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 
-
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
 from apps.util.profiling import profile
@@ -82,6 +81,7 @@ class ConceptOrderView(LoginRequiredMixin, DetailView):
 class ConceptOrderDrinkCreateView(LoginRequiredMixin, CreateView):
     model = ConceptOrderDrink
     form_class = ConceptOrderDrinkForm
+    template_name = 'moneybird/forms/conceptorderdrink_form.html'
     
     def dispatch(self, request, *args, **kwargs):
         self.order = get_object_or_404(ConceptOrder, pk=self.kwargs['pk'])
@@ -105,6 +105,7 @@ class ConceptOrderDrinkCreateView(LoginRequiredMixin, CreateView):
 class ConceptOrderDrinkEditView(LoginRequiredMixin, UpdateView):
     model = ConceptOrderDrink
     form_class = ConceptOrderDrinkForm
+    template_name = 'moneybird/forms/conceptorderdrink_form.html'
 
     def get_context_data(self, **kwargs):
         ctx = super(ConceptOrderDrinkEditView, self).get_context_data(**kwargs)
@@ -125,6 +126,7 @@ class ConceptOrderDrinkDeleteView(LoginRequiredMixin, DeleteView):
 class ConceptOrderDrinkLineCreateView(LoginRequiredMixin, CreateView):
     model = ConceptOrderDrinkLine
     form_class = ConceptOrderDrinkLineForm
+    template_name = 'moneybird/forms/conceptorderdrinkline_form.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.drink = get_object_or_404(ConceptOrderDrink, pk=self.kwargs['pk'])
@@ -148,6 +150,7 @@ class ConceptOrderDrinkLineCreateView(LoginRequiredMixin, CreateView):
 class ConceptOrderDrinkLineEditView(LoginRequiredMixin, UpdateView):
     model = ConceptOrderDrinkLine
     form_class = ConceptOrderDrinkLineForm
+    template_name = 'moneybird/forms/conceptorderdrinkline_form.html'
 
     def get_context_data(self, **kwargs):
         ctx = super(ConceptOrderDrinkLineEditView, self).get_context_data(**kwargs)
@@ -167,7 +170,7 @@ class ConceptOrderDrinkLineDeleteView(LoginRequiredMixin, DeleteView):
 
 class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     form_class = FileForm
-    template_name = 'moneybird/file_upload.html'
+    template_name = 'moneybird/forms/file_upload.html'
     success_url = reverse_lazy('moneybird:index')
 
     def _create_missing_objects(self, data):
@@ -219,7 +222,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 class OrdersCreate(LoginRequiredMixin, FormView):
     form_class = OrderForm
-    template_name = 'moneybird/conceptorder_form.html'
+    template_name = 'moneybird/forms/conceptorder_form.html'
 
     def form_valid(self, form):
         customer = form.cleaned_data['customer']
@@ -273,8 +276,6 @@ class OrdersSendAllView(LoginRequiredMixin, View):
 
         return redirect('moneybird:index')
     
-
-
 
 class OrdersSendSelectedView(LoginRequiredMixin, View):
     def post(self, request):
@@ -331,7 +332,7 @@ class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
-    template_name = 'moneybird/customer_form.html'
+    template_name = 'moneybird/forms/customer_form.html'
     success_url = reverse_lazy('moneybird:index')
 
 
@@ -353,13 +354,14 @@ class Products(LoginRequiredMixin, ListView):
 class ProductCreate(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
-    template_name = 'moneybird/product_form.html'
+    template_name = 'moneybird/forms/product_form.html'
     success_url = reverse_lazy('moneybird:products')
 
 
 class ProductUpdate(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
+    template_name = 'moneybird/forms/product_form.html'
     success_url = reverse_lazy('moneybird:products')
 
 
@@ -395,14 +397,14 @@ class ProductTypes(LoginRequiredMixin, ListView):
 class ProductTypeCreate(LoginRequiredMixin, CreateView):
     model = ProductType
     form_class = ProductTypeForm
-    template_name = 'moneybird/product_type_form.html'
+    template_name = 'moneybird/forms/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')
 
 
 class ProductTypeUpdate(LoginRequiredMixin, UpdateView):
     model = ProductType
     form_class = ProductTypeForm
-    template_name = 'moneybird/product_type_form.html'
+    template_name = 'moneybird/forms/product_type_form.html'
     success_url = reverse_lazy('moneybird:product_types')
 
 

@@ -1,12 +1,12 @@
 import json
 from datetime import datetime
 
-from django.forms import ModelForm, Form, CharField
+from django.forms import ModelForm, CharField
 from django import forms
 
 
 from apps.moneybird.models import Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
-from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
+from apps.util.forms import CachingModelChoiceField
 
 
 class FileForm(forms.Form):
