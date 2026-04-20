@@ -22,12 +22,12 @@
         <ul>
         {% for product in new_products %}
             <li>
-                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product.edit_modal_id }}">{{ product }}</a>" to a Moneybird ID and Product Type.
+                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product.edit_modal_id }}">{{ product }}</a>" to a Product Type.
             </li>
         {% endfor %}
         {% for customer in new_customers %}
             <li>
-                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ customer.edit_modal_id }}">{{ customer }}</a>" to a Moneybird ID and a VAT Type.
+                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ customer.edit_modal_id }}">{{ customer }}</a>" to a VAT Type.
             </li>
         {% endfor %}
         {% for product_type in new_product_types %}

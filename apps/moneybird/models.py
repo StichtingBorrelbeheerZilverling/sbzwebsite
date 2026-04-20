@@ -38,7 +38,7 @@ class Customer(models.Model):
 
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
     moneybird_id = models.CharField(max_length=18, blank=True, null=False)
-    vat_type = models.CharField(max_length=1, blank=False, choices=VAT_TYPE, default='1')
+    vat_type = models.CharField(max_length=1, blank=True, choices=VAT_TYPE)
     # self.invoice_workflow_id = invoice_workflow_id # TODO Currently not supported
 
     def get_absolute_url(self):
@@ -50,6 +50,7 @@ class Customer(models.Model):
     def as_moneybird_dict(self):
         return {
             "company_name": self.alexia_name,
+            # "invoice_workflow_id": self.invoice_workflow_id
         }
 
     class Meta:
@@ -83,7 +84,7 @@ class ConceptOrder(models.Model):
 
     def as_moneybird(self):
         result = MoneybirdOrder(reference=self.reference,
-                                contact_id=int(self.customer.moneybird_id),
+                                contact_id=self.customer.moneybird_id,
                                 customer_vat_type=self.customer.vat_type)
 
         for drink in self.conceptorderdrink_set.all():
@@ -148,7 +149,7 @@ class Product(models.Model):
             "price": 0,  # Moneybird requires a price
             "ledger_account_id": self.product_type.ledger_account_id,
             "title": self.alexia_name,
-            "vat_rate_id": self.product_type.vat_rate.moneybird_id,
+            "tax_rate_id": self.product_type.vat_rate.moneybird_id,
         }
 
     class Meta:

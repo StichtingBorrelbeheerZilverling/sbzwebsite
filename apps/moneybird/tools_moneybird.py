@@ -36,12 +36,18 @@ class Moneybird:
     def instantiate_or_redirect(request, *args, **kwargs):
         try:
             return Moneybird(request, *args, **kwargs), None
-        except Exception:
+        except MoneybirdTokensNotPresentException:
             return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
                 settings.mb_client_id, 
                 request.build_absolute_uri(reverse('moneybird:code')),
                 "sales_invoices settings",
             ))
+        except MoneybirdRateLimitExceededException as e:
+            messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+            return None, redirect('moneybird:index')
+        except Exception as e:
+            messages.error(request, "An error occurred while connecting to the Moneybird API: {}".format(e.response.text))
+            return None, redirect('moneybird:index')
 
     def _auth(self):
         now = datetime.now(tz=timezone.utc)
@@ -55,7 +61,7 @@ class Moneybird:
             elif self.auth_code:
                 self._request_token("code", self.auth_code, "authorization_code")
             else:
-                raise Exception("Tokens are not present; request a new authorization code.")
+                raise MoneybirdTokensNotPresentException()
         
         else:
             if self.access_token:
@@ -63,7 +69,7 @@ class Moneybird:
             elif self.auth_code:
                 self._request_token("code", self.auth_code, "authorization_code")
             else:
-                raise Exception("Tokens are not present; request a new authorization code.")
+                raise MoneybirdTokensNotPresentException()
         
         # Test if Access token is valid
         response = self._get("administrations")
@@ -104,20 +110,91 @@ class Moneybird:
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         })
-        if response.status_code == 429:
-            # Rate limit
-            messages.error(self.request, "Moneybird API rate limit exceeded. Please try again later.")
-        return response
+        # print("Get Request Headers: {}".format(response.request.headers))
+        # print("Get Request Body: {}".format(response.request.body))
+        # print("Get Response: {}".format(response.json()))
+        # print()
+
+        return self._response_handling(response)
 
     def _post(self, method, data):
         response = requests.post(Moneybird.BASE_URL + "api/v2/" + method, headers={
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         }, json=data)
-        if response.status_code == 429:
-            # Rate limit
-            messages.error(self.request, "Moneybird API rate limit exceeded. Please try again later.")
+        
+        # print("Post Request Headers: {}".format(response.request.headers))
+        # print("Post Request Body: {}".format(response.request.body))
+        # print("Post Response: {}".format(response.json()))
+        # print()
+
+        return self._response_handling(response)
+    
+    def _response_handling(self, response):
+        if response.status_code == 404:
+            raise MoneybirdNotFoundException("Requested resource not found in Moneybird API", response=response)
+
+        elif response.status_code == 402:
+            raise MoneybirdAccountLimitReachedException("Moneybird account limit reached.", response=response)
+        
+        elif response.status_code == 429:
+            raise MoneybirdRateLimitExceededException("Moneybird API rate limit exceeded.", response=response)
+
+        elif response.status_code in [400, 401, 403, 405, 406, 422]:
+            raise MoneybirdBadRequestException("Bad request to Moneybird API", response=response)
+        
+        elif response.status_code == 500:
+            raise MoneybirdInternalServerErrorException("Moneybird API returned an internal server error.", response=response)
+        
         return response
+    
+    def create_missing_customers(self, request):
+        from apps.moneybird.models import Customer
+        administration = self.get_administration()
+
+        for customer in Customer.objects.all():            
+            if customer.moneybird_id:
+                try:
+                    response = self.get_customer(administration, customer.moneybird_id)
+                    moneybird_customer = response.json()
+                    if moneybird_customer['company_name'] != customer.alexia_name:
+                        messages.warning(request, "Customer {} has a different name in Moneybird ({}). Consider updating it.".format(customer.alexia_name, moneybird_customer['company_name']))
+
+                except MoneybirdNotFoundException:
+                    messages.error(request, "Moneybird customer does not exist. Removing Moneybird ID for customer {}.".format(customer.alexia_name))
+                    customer.moneybird_id = ""
+                    customer.save()
+        
+            if not customer.moneybird_id:
+                response = self.create_customer(administration, customer.as_moneybird_dict())
+                customer.moneybird_id = response.json()['id']
+                customer.save()
+                messages.success(request, "Customer {} created successfully in Moneybird.".format(customer.alexia_name))
+
+
+    def create_missing_products(self, request):
+        from apps.moneybird.models import Product
+        administration = self.get_administration()
+        
+        for product in Product.objects.all():
+            if product.moneybird_id:
+                try:
+                    response = self.get_product(administration, product.moneybird_id)
+                    moneybird_product = response.json()
+                    if moneybird_product['title'] != product.alexia_name:
+                        messages.warning(request, "Product {} has a different name in Moneybird ({}). Consider updating it.".format(product.alexia_name, moneybird_product['title']))
+                
+                except MoneybirdNotFoundException:        
+                    messages.error(request, "Moneybird Product does not exist. Removing Moneybird ID for product {}.".format(product.alexia_name))
+                    product.moneybird_id = ""
+                    product.save()
+        
+            if not product.moneybird_id:
+                response = self.create_product(administration, product.as_moneybird_dict())
+                product.moneybird_id = response.json()['id']
+                product.save()
+                messages.success(request, "Product {} created successfully in Moneybird.".format(product.alexia_name))
+
 
     def get_administration(self):
         return self._get("administrations").json()[0]['id']
@@ -132,7 +209,7 @@ class Moneybird:
         return self._post("{}/products".format(administration), {'product': product})
     
     def get_customer(self, administration, customer_id):
-        return self._get("{}/contacts/customer_id/{}".format(administration, customer_id))
+        return self._get("{}/contacts/{}".format(administration, customer_id))
 
     def create_customer(self, administration, customer):
         return self._post("{}/contacts".format(administration), {'contact': customer})
@@ -182,3 +259,52 @@ class MoneybirdOrder:
             # "prices_are_incl_tax": self.customer_vat_type,  #TODO: Fix incl/excl vat for different customers
             "details_attributes": lines,
         }
+    
+
+class MoneybirdNotFoundException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+    
+    def __str__(self):
+        return "MoneybirdNotFoundException: {}".format(super().__str__())
+
+class MoneybirdBadRequestException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+
+    def __str__(self):
+        return "MoneybirdBadRequestException: {}".format(super().__str__())
+
+class MoneybirdAccountLimitReachedException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+
+    def __str__(self):
+        return "MoneybirdAccountLimitReachedException: {}".format(super().__str__())
+
+class MoneybirdTokensNotPresentException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+
+    def __str__(self):
+        return "MoneybirdTokensNotPresentException: {}".format(super().__str__())
+
+class MoneybirdRateLimitExceededException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+
+    def __str__(self):
+        return "MoneybirdRateLimitExceededException: {}".format(super().__str__())
+
+class MoneybirdInternalServerErrorException(Exception):
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response
+
+    def __str__(self):
+        return "MoneybirdInternalServerErrorException: {}".format(super().__str__())

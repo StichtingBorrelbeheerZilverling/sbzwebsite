@@ -109,6 +109,11 @@ class OrderForm(ModelForm):
         model = ConceptOrder
         fields = ['customer']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['customer'].required = True
+        self.fields['customer'].empty_label = None
+
 
 class CustomerForm(ModelForm):
     class Meta:

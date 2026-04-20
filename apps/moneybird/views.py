@@ -1,6 +1,4 @@
 from datetime import datetime
-import time
-from urllib.parse import unquote
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
@@ -15,7 +13,7 @@ from django.db.models.deletion import ProtectedError
 
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
-from apps.moneybird.tools_moneybird import Moneybird
+from apps.moneybird.tools_moneybird import Moneybird, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -29,8 +27,8 @@ class Index(LoginRequiredMixin, ListView):
         context['create_order_form'] = FileForm()
         context['create_order'] = OrderForm()
 
-        context['new_products'] = Product.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact="") | Q(product_type__isnull=True))
-        context['new_customers'] = Customer.objects.filter(Q(moneybird_id__isnull=True) | Q(moneybird_id__exact="") | Q(vat_type__isnull=True) | Q(vat_type__exact=""))
+        context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
+        context['new_customers'] = Customer.objects.filter(Q(vat_type__isnull=True) | Q(vat_type__exact=""))
         context['new_product_types'] = ProductType.objects.filter(Q(ledger_account_id__isnull=True) | Q(ledger_account_id__exact=""))
 
         for product in context['new_products']:
@@ -173,72 +171,15 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     success_url = reverse_lazy('moneybird:index')
 
     def _create_missing_objects(self, data):
-        moneybird, do_redirect = Moneybird.instantiate_or_redirect(self.request)
-        if do_redirect: return do_redirect
-
-        administration = moneybird.get_administration()
-
-        for customer_name in data['drinks'].keys():
-            customer, _ = Customer.objects.get_or_create(alexia_name=customer_name)
-            customer.alexia_name = customer_name
-            
-            if customer.moneybird_id:
-                response = moneybird.get_customer(administration, customer.moneybird_id)
-                if response.status_code == 404:
-                    messages.error(self.request, "Moneybird ID does not exist. Removing Moneybird ID for customer {}.".format(customer_name))
-                    customer.moneybird_id = 0
-                    customer.save()
-
-                else:
-                    # TODO: Check if all fields are the same, consider moving to other helper function
-                    moneybird_customer = response.json()
-                    if moneybird_customer['company_name'] != customer_name:
-                        messages.warning(self.request, "Customer {} has a different name in Moneybird ({}). Consider updating it.".format(customer_name, moneybird_customer['company_name']))
-        
-            if customer.moneybird_id is None or customer.moneybird_id == 0:
-                response = moneybird.create_customer(administration, customer.as_moneybird_dict())
-                if response.status_code == 201:
-                    customer.moneybird_id = response.json()['id']
-                    messages.success(self.request, "Customer {} created successfully in Moneybird.".format(customer_name))
-                else:
-                    messages.error(self.request, "Failed to create customer {} in Moneybird: {}".format(customer, response.text))
-
-            customer.save()
-
-            
+        for customer in data['drinks'].keys():
+            if not Customer.objects.filter(alexia_name=customer).exists():
+                customer_obj = Customer()
+                customer_obj.alexia_name = customer
+                customer_obj.save()
 
         for product_id, product_name in data['products'].items():
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
             product.alexia_name = product_name
-            product.ledger_account_id = "409681474380367705"
-            product.vat_rate_id = "409681474988541809"
-            product.save()
-
-            if product.moneybird_id:
-                response = moneybird.get_product(administration, product.moneybird_id)
-                if response.status_code == 404:
-                    messages.error(self.request, "Moneybird ID does not exist. Removing Moneybird ID for product {}.".format(product_name))
-                    product.moneybird_id = 0
-                    product.save()
-
-                else:
-                    # TODO: Check if all fields are the same, consider moving to other helper function
-                    moneybird_product = response.json()
-                    if moneybird_product['title'] != product_name:
-                        messages.warning(self.request, "Product {} has a different name in Moneybird ({}). Consider updating it.".format(product_name, moneybird_product['title']))
-            
-            if product.moneybird_id is None or product.moneybird_id == 0:
-                response = moneybird.create_product(administration, product.as_moneybird_dict())
-                if response.status_code == 201:
-                    print('made new product: {}'.format(response.json()))
-                    product.moneybird_id = response.json()['id']
-                    messages.success(self.request, "Product {} created successfully in Moneybird.".format(product_name))
-                else:
-                    print('failed to make new product: {}'.format(response.json()))
-                    print('request: {}'.format(response.request.body))
-                    messages.error(self.request, "Failed to create product {} in Moneybird: {}".format(product_name, response.text))
-            
-            time.sleep(0.1) # Avoid hitting rate limits
             product.save()
 
 
@@ -296,42 +237,87 @@ class OrdersSendAllView(LoginRequiredMixin, View):
         moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
         if do_redirect: return do_redirect
 
-        orders = ConceptOrder.objects.all()
+        try:
+            moneybird.create_missing_customers(request)
+            moneybird.create_missing_products(request)
 
-        for order in orders:
-            moneybird_order = order.as_moneybird()
-            response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
-            if response.status_code == 402:
-                messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
-            elif response.status_code == 201:
-                messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
-                order.sent = True
-                order.save()
-            else:
-                messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, response.text))
+        except MoneybirdRateLimitExceededException as e:
+            messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+
+        except Exception as e:
+            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text))
+
+        else:
+            orders = ConceptOrder.objects.all()
+
+            for order in orders:
+                try:
+                    moneybird_order = order.as_moneybird()
+                    response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
+                
+                except MoneybirdAccountLimitReachedException:
+                    messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
+                    break
+
+                except MoneybirdRateLimitExceededException as e:
+                    messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+                    break
+
+                except Exception as e:
+                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text))
+
+                else:
+                    messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
+                    order.sent = True
+                    order.save()
 
         return redirect('moneybird:index')
+    
+
 
 
 class OrdersSendSelectedView(LoginRequiredMixin, View):
     def post(self, request):
         selected_orders = request.POST.getlist("selected_orders")
-        orders = ConceptOrder.objects.filter(id__in=selected_orders)
+        if len(selected_orders) == 0:
+            messages.warning(request, "No orders selected.")
+            return redirect('moneybird:index')
 
         moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
         if do_redirect: return do_redirect
 
-        for order in orders:
-            moneybird_order = order.as_moneybird()
-            response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
-            if response.status_code == 402:
-                messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
-            elif response.status_code == 201:
-                messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
-                order.sent = True
-                order.save()
-            else:
-                messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, response.text))
+        try:
+            moneybird.create_missing_customers(request)
+            moneybird.create_missing_products(request)
+
+        except MoneybirdRateLimitExceededException as e:
+            messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+
+        except Exception as e:
+            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text))
+
+        else:
+            orders = ConceptOrder.objects.filter(id__in=selected_orders)
+            for order in orders:
+                try:
+                    moneybird_order = order.as_moneybird()
+                    response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
+                
+                except MoneybirdAccountLimitReachedException:
+                    messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
+                    break
+
+                except MoneybirdRateLimitExceededException as e:
+                    messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+                    break
+
+                except Exception as e:
+                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text))
+
+                else:
+                    messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
+                    order.sent = True
+                    order.save()
 
         return redirect('moneybird:index')
 
