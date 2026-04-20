@@ -238,22 +238,22 @@ class OrdersSendAllView(LoginRequiredMixin, View):
         if do_redirect: return do_redirect
 
         try:
-            moneybird.create_missing_customers(request)
-            moneybird.create_missing_products(request)
+            orders = ConceptOrder.objects.all()
+            moneybird.create_missing_customers(request, orders)
+            moneybird.create_missing_products(request, orders)
 
         except MoneybirdRateLimitExceededException as e:
             messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
 
         except Exception as e:
-            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text))
+            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text if hasattr(e, 'response') else str(e)))
 
         else:
-            orders = ConceptOrder.objects.all()
 
             for order in orders:
                 try:
                     moneybird_order = order.as_moneybird()
-                    response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
+                    moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
                 
                 except MoneybirdAccountLimitReachedException:
                     messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
@@ -264,7 +264,7 @@ class OrdersSendAllView(LoginRequiredMixin, View):
                     break
 
                 except Exception as e:
-                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text))
+                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text if hasattr(e, 'response') else str(e)))
 
                 else:
                     messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))
@@ -279,6 +279,7 @@ class OrdersSendAllView(LoginRequiredMixin, View):
 class OrdersSendSelectedView(LoginRequiredMixin, View):
     def post(self, request):
         selected_orders = request.POST.getlist("selected_orders")
+
         if len(selected_orders) == 0:
             messages.warning(request, "No orders selected.")
             return redirect('moneybird:index')
@@ -287,21 +288,21 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
         if do_redirect: return do_redirect
 
         try:
-            moneybird.create_missing_customers(request)
-            moneybird.create_missing_products(request)
+            orders = ConceptOrder.objects.filter(id__in=selected_orders)
+            moneybird.create_missing_customers(request, orders)
+            moneybird.create_missing_products(request, orders)
 
         except MoneybirdRateLimitExceededException as e:
             messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
 
         except Exception as e:
-            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text))
+            messages.error(request, "Failed to create missing customers or products in Moneybird: {}".format(e.response.text if hasattr(e, 'response') else str(e)))
 
         else:
-            orders = ConceptOrder.objects.filter(id__in=selected_orders)
             for order in orders:
                 try:
                     moneybird_order = order.as_moneybird()
-                    response = moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
+                    moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
                 
                 except MoneybirdAccountLimitReachedException:
                     messages.error(request, "Failed to create invoice for {}. Invoice limit reached.".format(order.customer.alexia_name))
@@ -312,7 +313,7 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
                     break
 
                 except Exception as e:
-                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text))
+                    messages.error(request, "Failed to create invoice for {}: {}".format(order.customer.alexia_name, e.response.text if hasattr(e, 'response') else str(e)))
 
                 else:
                     messages.success(request, "Invoice created successfully for {}.".format(order.customer.alexia_name))

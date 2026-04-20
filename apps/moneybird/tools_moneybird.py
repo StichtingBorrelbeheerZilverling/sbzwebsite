@@ -148,15 +148,17 @@ class Moneybird:
         
         return response
     
-    def create_missing_customers(self, request):
+    def create_missing_customers(self, request, orders):
         from apps.moneybird.models import Customer
         administration = self.get_administration()
 
-        for customer in Customer.objects.all():            
+        for customer in Customer.objects.filter(pk__in=orders.values_list('customer_id', flat=True).distinct()):
             if customer.moneybird_id:
                 try:
                     response = self.get_customer(administration, customer.moneybird_id)
                     moneybird_customer = response.json()
+
+                    # TODO: remove, different name is inevitable (KvK name vs Alexia name). Do check for vat_type/invoice_workflow when implemented
                     if moneybird_customer['company_name'] != customer.alexia_name:
                         messages.warning(request, "Customer {} has a different name in Moneybird ({}). Consider updating it.".format(customer.alexia_name, moneybird_customer['company_name']))
 
@@ -172,11 +174,11 @@ class Moneybird:
                 messages.success(request, "Customer {} created successfully in Moneybird.".format(customer.alexia_name))
 
 
-    def create_missing_products(self, request):
+    def create_missing_products(self, request, orders):
         from apps.moneybird.models import Product
         administration = self.get_administration()
         
-        for product in Product.objects.all():
+        for product in Product.objects.filter(pk__in=orders.values_list('conceptorderdrink__conceptorderdrinkline__product', flat=True).distinct()):
             if product.moneybird_id:
                 try:
                     response = self.get_product(administration, product.moneybird_id)
