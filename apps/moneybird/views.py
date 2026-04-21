@@ -166,6 +166,8 @@ class ConceptOrderDrinkLineEditView(LoginRequiredMixin, UpdateView):
 
 class ConceptOrderDrinkLineDeleteView(LoginRequiredMixin, DeleteView):
     model = ConceptOrderDrinkLine
+    template_name = 'moneybird/forms/conceptorderdrinkline_confirm_delete.html'
+
 
     def get_success_url(self):
         return reverse('moneybird:order_view', kwargs={'pk': self.object.drink.order.pk})
@@ -224,6 +226,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 
 class OrdersCreate(LoginRequiredMixin, FormView):
+    model = ConceptOrder
     form_class = OrderForm
     template_name = 'moneybird/forms/conceptorder_form.html'
 
@@ -294,16 +297,19 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
 
 class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
     model = ConceptOrder
+    template_name = 'moneybird/forms/conceptorder_confirm_delete.html'
     success_url = reverse_lazy('moneybird:index')
 
 
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
     # TODO: Make this editable via interface as well
-    # TODO: make this update Moneybird customer as well (with vat_type and invoice_workflow_id)
+    # TODO: make this update Moneybird customer as well (with vat_type)
     model = Customer
     form_class = CustomerForm
     template_name = 'moneybird/forms/customer_form.html'
     success_url = reverse_lazy('moneybird:index')
+
+    # def post(self, request, *args, **kwargs):
 
 
 class Products(LoginRequiredMixin, ListView):
@@ -329,7 +335,7 @@ class ProductCreate(LoginRequiredMixin, CreateView):
 
 
 class ProductUpdate(LoginRequiredMixin, UpdateView):
-     # TODO: make this update Moneybird customer as well (with product_type)
+     # TODO: make this update Moneybird product as well (with product_type)
     model = Product
     form_class = ProductForm
     template_name = 'moneybird/forms/product_form.html'
@@ -338,6 +344,7 @@ class ProductUpdate(LoginRequiredMixin, UpdateView):
 
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
+    template_name = 'moneybird/forms/product_confirm_delete.html'
     success_url = reverse_lazy('moneybird:products')
 
     def post(self, request, *args, **kwargs):

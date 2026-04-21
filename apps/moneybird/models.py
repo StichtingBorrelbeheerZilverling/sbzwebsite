@@ -39,7 +39,6 @@ class Customer(models.Model):
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
     moneybird_id = models.CharField(max_length=18, blank=True, null=False)
     vat_type = models.CharField(max_length=1, blank=True, choices=VAT_TYPE)
-    # self.invoice_workflow_id = invoice_workflow_id # TODO Currently not supported
 
     def get_absolute_url(self):
         return reverse('moneybird:customer_edit', args=(self.pk,))
@@ -105,12 +104,14 @@ class ConceptOrderDrink(models.Model):
         return self.name
 
     def as_moneybird(self):
+        period = self.date.strftime("%Y%m%d..%Y%m%d")
         order_lines = []
 
         for line in self.conceptorderdrinkline_set.all():
-            order_lines.append(MoneybirdOrderLine(description="{} ({}) - {}".format(self.name, self.date.strftime("%d %b"), line.product.alexia_name),
+            order_lines.append(MoneybirdOrderLine(description="{} - {}".format(self.name, line.product.alexia_name),
                                                   product_id=line.product.moneybird_id,
-                                                  quantity=line.amount))
+                                                  quantity=line.amount,
+                                                  period=period))
 
         return order_lines
 

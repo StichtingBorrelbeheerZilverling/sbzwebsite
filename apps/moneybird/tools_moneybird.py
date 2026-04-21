@@ -154,10 +154,6 @@ class Moneybird:
                     response = self.get_customer(administration, customer.moneybird_id)
                     moneybird_customer = response.json()
 
-                    # TODO: remove, different name is inevitable (KvK name vs Alexia name). Do check for vat_type/invoice_workflow when implemented
-                    if moneybird_customer['company_name'] != customer.alexia_name:
-                        messages.warning(request, "Customer {} has a different name in Moneybird ({}). Consider updating it.".format(customer.alexia_name, moneybird_customer['company_name']))
-
                 except MoneybirdNotFoundException:
                     messages.error(request, "Moneybird customer does not exist. Removing Moneybird ID for customer {}.".format(customer.alexia_name))
                     customer.moneybird_id = ""
@@ -193,7 +189,6 @@ class Moneybird:
                 product.save()
                 messages.success(request, "Product {} created successfully in Moneybird.".format(product.alexia_name))
 
-
     def get_administration(self):
         return self._get("administrations").json()[0]['id']
 
@@ -217,21 +212,22 @@ class MoneybirdOrderLine:
     def __init__(self,
                  product_id,
                  quantity,
-                 description):
+                 description, period):
         self.description = description
         self.product_id = product_id
         self.quantity = quantity
+        self.period = period
 
     def as_dict(self):
         return {
             "amount": self.quantity,
             "product_id": self.product_id,
             "description": self.description,
+            "period": self.period,
         }
 
 
 class MoneybirdOrder:
-    # TODO add support for different workflows for different associations (for incl/excl vat)
     def __init__(self,
                  contact_id,
                  reference,
@@ -239,9 +235,9 @@ class MoneybirdOrder:
         self.reference = reference
         self.contact_id = contact_id
         if customer_vat_type == '0' or customer_vat_type == 0:
-            self.customer_vat_type = False
+            self.prices_incl_vat = False
         else:
-            self.customer_vat_type = True
+            self.prices_incl_vat = True
 
         self.lines = []
 
@@ -254,7 +250,7 @@ class MoneybirdOrder:
         return {
             "contact_id": self.contact_id,
             "reference": self.reference,
-            # "prices_are_incl_tax": self.customer_vat_type,  #TODO: Fix incl/excl vat for different customers
+            "prices_are_incl_tax": self.prices_incl_vat,
             "details_attributes": lines,
         }
     
