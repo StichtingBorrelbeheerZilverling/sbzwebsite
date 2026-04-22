@@ -1,9 +1,5 @@
 {% extends 'base.html' %}
 {% load bootstrap_form %}
-
-{% block content %}
-{% endblock %}
-
 {% block modals %}
     {% bootstrap_delete_modal object 'moneybird:product_delete' object.pk %}
     <script>
