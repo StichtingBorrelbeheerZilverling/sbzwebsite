@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% load bootstrap_form %}
-
 {% block content %}
-    <h1>Create Order Drink</h1>
     <form method="POST" action="">
         {% csrf_token %}
         {{ form|bootstrap_form }}

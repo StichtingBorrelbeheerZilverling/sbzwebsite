@@ -22,17 +22,17 @@
         <ul>
         {% for product in new_products %}
             <li>
-                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product.edit_modal_id }}">{{ product }}</a>" to a Product Type.
+                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Product-{{ product.pk }}">{{ product }}</a>" to a Product Type.
             </li>
         {% endfor %}
         {% for customer in new_customers %}
             <li>
-                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ customer.edit_modal_id }}">{{ customer }}</a>" to a VAT Type.
+                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Customer-{{ customer.pk }}">{{ customer }}</a>" to a VAT Type.
             </li>
         {% endfor %}
         {% for product_type in new_product_types %}
             <li>
-                Please map the new product type "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#form-{{ product_type.edit_modal_id }}">{{ product_type }}</a>" to a Ledger Account ID.
+                Please map the new product type "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-ProductType-{{ product_type.pk }}">{{ product_type }}</a>" to a Ledger Account ID.
             </li>
         {% endfor %}
         </ul>
@@ -75,7 +75,7 @@
             <tr>
                 <td><input type="checkbox" name="selected_orders" value="{{ order.pk }}"></td>
                 <td>{{ order.date|date:"d-m-Y" }}</td>
-                <td>{{ order.customer }}</td>
+                <td><a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Customer-{{ order.customer.pk }}">{{ order.customer }}</a></td>
                 <td>{{ order.conceptorderdrink_set.all|length }}</td>
                 <td>
                     <a href="{% url 'moneybird:order_view' order.pk %}" class="btn btn-secondary btn-sm">View</a>
@@ -111,14 +111,15 @@
         {% bootstrap_delete_modal order 'moneybird:order_delete' order.pk %}
     {% endfor %}
 
-    {% for product in new_products %}
-        {% bootstrap_form_modal product.edit_modal_id "Edit Product" product.edit_form 'moneybird:product_edit' product.pk %}
+    {% for customer in customers %}
+        {% bootstrap_edit_modal customer customer.edit_form 'moneybird:customer_edit' customer.pk %}
     {% endfor %}
-    {% for customer in new_customers %}
-        {% bootstrap_form_modal customer.edit_modal_id "Edit Customer" customer.edit_form 'moneybird:customer_edit' customer.pk %}
+    
+    {% for product in new_products %}
+        {% bootstrap_edit_modal product product.edit_form 'moneybird:product_edit' product.pk %}
     {% endfor %}
     {% for product_type in new_product_types %}
-        {% bootstrap_form_modal product_type.edit_modal_id "Edit Product Type" product_type.edit_form 'moneybird:product_type_edit' product_type.pk %}
+        {% bootstrap_edit_modal product_type product_type.edit_form 'moneybird:product_type_edit' product_type.pk %}
     {% endfor %}
 
     {% bootstrap_form_modal 'file-order' "Create concept orders from File" create_order_form 'moneybird:orders_create_from_file'%}

@@ -28,19 +28,20 @@ class Index(LoginRequiredMixin, ListView):
         context['create_order_form'] = FileForm()
         context['create_order'] = OrderForm()
 
-        context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
         context['new_customers'] = Customer.objects.filter(Q(vat_type__isnull=True) | Q(vat_type__exact=""))
+        context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
         context['new_product_types'] = ProductType.objects.filter(Q(ledger_account_id__isnull=True) | Q(ledger_account_id__exact=""))
+        
+        # All customers are needed, because all customers are editable in the index page
+        context['customers'] = Customer.objects.all()
 
+
+        for customer in context['customers']:
+            customer.edit_form = CustomerForm(instance=customer)
         for product in context['new_products']:
             product.edit_form = ProductForm(instance=product)
-            product.edit_modal_id = f"edit-product-{product.pk}"
-        for customer in context['new_customers']:
-            customer.edit_form = CustomerForm(instance=customer)
-            customer.edit_modal_id = f"edit-customer-{customer.pk}"
         for product_type in context['new_product_types']:
             product_type.edit_form = ProductTypeForm(instance=product_type)
-            product_type.edit_modal_id = f"edit-product-type-{product_type.pk}"
 
         return context
 
@@ -303,7 +304,6 @@ class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
 
 
 class CustomerUpdate(LoginRequiredMixin, View):
-    # TODO: Make this editable via interface as well
     model = Customer
     form_class = CustomerForm
     template_name = 'moneybird/forms/customer_form.html'
