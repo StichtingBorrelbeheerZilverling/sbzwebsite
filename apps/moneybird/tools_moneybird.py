@@ -11,6 +11,7 @@ from apps.moneybird.exceptions import *
 
 class Moneybird:
     BASE_URL = "https://moneybird.com/api/v2/"
+    OAUTH_URL = "https://moneybird.com/oauth/"
     EXPIRE_MARGIN = 5*60 # seconds
 
     def __init__(self, request, client_id=None, client_secret=None):
@@ -40,7 +41,7 @@ class Moneybird:
             return Moneybird(request, *args, **kwargs), None
         except TokensNotPresentException:
             # If all attempts at authenticating fail, redirect the user to request a new auth code
-            return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
+            return None, redirect(Moneybird.OAUTH_URL + "authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
                 settings.mb_client_id, 
                 request.build_absolute_uri(reverse('moneybird:code')),
                 "sales_invoices settings",
@@ -84,7 +85,7 @@ class Moneybird:
 
     def _request_token(self, token_type, token, grant_type):
         from apps.moneybird.models import Settings
-        response = requests.post(Moneybird.BASE_URL + "oauth/token", data={
+        response = requests.post(Moneybird.OAUTH_URL + "token", data={
             token_type: token,
             "client_id": self.client_id,
             "client_secret": self.client_secret,
