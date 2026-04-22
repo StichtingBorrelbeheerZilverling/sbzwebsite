@@ -122,8 +122,7 @@ class CustomerForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['vat_type'].required = True
-        self.fields['vat_type'].empty_label = None
+        self.fields['vat_type'].choices = Customer.VAT_TYPE
     
 
 class ProductForm(ModelForm):

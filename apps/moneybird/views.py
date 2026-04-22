@@ -380,8 +380,6 @@ class ProductUpdate(LoginRequiredMixin, View):
             return render(request, self.template_name, {'form': form})
         
 
-
-
 class ProductDelete(LoginRequiredMixin, DeleteView):
     model = Product
     template_name = 'moneybird/forms/product_confirm_delete.html'
