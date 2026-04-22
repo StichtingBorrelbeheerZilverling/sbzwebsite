@@ -30,7 +30,15 @@ class Index(LoginRequiredMixin, ListView):
 
         context['new_customers'] = Customer.objects.filter(Q(vat_type__isnull=True) | Q(vat_type__exact=""))
         context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
+        context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
         context['new_product_types'] = ProductType.objects.filter(Q(ledger_account_id__isnull=True) | Q(ledger_account_id__exact=""))
+        
+        # All customers are needed, because all customers are editable in the index page
+        context['customers'] = Customer.objects.all()
+
+
+        for customer in context['customers']:
+            customer.edit_form = CustomerForm(instance=customer)
         
         # All customers are needed, because all customers are editable in the index page
         context['customers'] = Customer.objects.all()
