@@ -15,8 +15,9 @@ from django.views.generic.detail import DetailView
 
 from apps.multivers.defaults import make_orderline, make_order
 from apps.multivers.forms import FileForm, ProductForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm, SendOrdersForm
-from apps.multivers.tools_multivers import Multivers, MultiversOrderLine, MultiversOrder
+from apps.multivers.tools import Multivers, MultiversOrderLine, MultiversOrder
 from apps.util.profiling import profile
+from . import tools
 from .models import Settings, Customer, Product, Location, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
 

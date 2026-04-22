@@ -7,7 +7,7 @@ from django.forms import ModelForm, ChoiceField, HiddenInput, MultipleChoiceFiel
 from django.utils.functional import cached_property
 from django import forms
 
-from apps.multivers import tools_multivers
+from apps.multivers import tools
 from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
 from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
 

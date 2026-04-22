@@ -14,7 +14,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('alexia_name', 'vat_type', 'multivers_id')
+    list_display = ('alexia_name', 'multivers_id', 'vat_type')
     list_editable = ('multivers_id', 'vat_type')
 
 

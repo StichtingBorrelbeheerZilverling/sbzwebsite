@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # command: python3 manage.py runserver 0.0.0.0:8080
+    links:
+      - nginx
+    ports:
+      - 8080:8080
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+    volumes:
+      - .:/app
+  nginx:
+    image: nginx:latest
+volumes:
+  data:
