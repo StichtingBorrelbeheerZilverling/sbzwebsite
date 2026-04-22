@@ -123,6 +123,14 @@ class Moneybird:
 
         return self._response_handling(response)
     
+    def _patch(self, method, data):
+        response = requests.patch(Moneybird.BASE_URL + "api/v2/" + method, headers={
+            'Authorization': 'Bearer {}'.format(self.access_token),
+            'Accept': 'application/json',
+        }, json=data)
+
+        return self._response_handling(response)
+    
     def _response_handling(self, response):
         if response.status_code == 404:
             raise MoneybirdNotFoundException("Requested resource not found in Moneybird API", response=response)
@@ -165,7 +173,6 @@ class Moneybird:
                 customer.save()
                 messages.success(request, "Customer {} created successfully in Moneybird.".format(customer.alexia_name))
 
-
     def create_missing_products(self, request, orders):
         from apps.moneybird.models import Product
         administration = self.get_administration()
@@ -197,6 +204,9 @@ class Moneybird:
     
     def get_product(self, administration, product_id):
         return self._get("{}/products/{}".format(administration, product_id))
+    
+    def update_product(self, administration, product_id, product):
+        return self._patch("{}/products/{}".format(administration, product_id), {'product': product})
 
     def create_product(self, administration, product):
         return self._post("{}/products".format(administration), {'product': product})

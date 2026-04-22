@@ -10,6 +10,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
+from flask import request
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
@@ -301,15 +302,12 @@ class ConceptOrderDelete(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('moneybird:index')
 
 
-class CustomerUpdate(LoginRequiredMixin, UpdateView):
+class CustomerUpdate(LoginRequiredMixin, View):
     # TODO: Make this editable via interface as well
-    # TODO: make this update Moneybird customer as well (with vat_type)
     model = Customer
     form_class = CustomerForm
     template_name = 'moneybird/forms/customer_form.html'
     success_url = reverse_lazy('moneybird:index')
-
-    # def post(self, request, *args, **kwargs):
 
 
 class Products(LoginRequiredMixin, ListView):
@@ -334,12 +332,46 @@ class ProductCreate(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('moneybird:products')
 
 
-class ProductUpdate(LoginRequiredMixin, UpdateView):
-     # TODO: make this update Moneybird product as well (with product_type)
+class ProductUpdate(LoginRequiredMixin, View):
     model = Product
     form_class = ProductForm
     template_name = 'moneybird/forms/product_form.html'
     success_url = reverse_lazy('moneybird:products')
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, instance=self.model.objects.get(pk=self.kwargs['pk']))
+
+        if form.is_valid():
+            # Only updates Moneybird if product name or type has changed
+            old_name  = Product.objects.get(pk=self.kwargs['pk']).alexia_name
+            old_type = Product.objects.get(pk=self.kwargs['pk']).product_type
+            form.save()
+            new_name = form.instance.alexia_name
+            new_type = form.instance.product_type
+
+            if (old_name == new_name) and (old_type == new_type):
+                return redirect(self.success_url)
+
+            moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
+            if do_redirect: return do_redirect
+            
+            try:
+                moneybird.update_product(moneybird.get_administration(), form.instance.moneybird_id, form.instance.as_moneybird_dict())
+
+            except MoneybirdRateLimitExceededException as e:
+                messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
+
+            except MoneybirdAPIException as e:
+                messages.error(request, "Failed to update product in Moneybird: {}: {}".format(e, e.response.text))
+
+            else:
+                messages.success(request, "Product updated successfully in Moneybird.")
+            
+            return redirect(self.success_url)
+        else:
+            return render(request, self.template_name, {'form': form})
+        
+
 
 
 class ProductDelete(LoginRequiredMixin, DeleteView):

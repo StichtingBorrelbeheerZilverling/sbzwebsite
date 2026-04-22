@@ -93,8 +93,17 @@
         </tbody>
     </table>
     </form>
-
-    {# TODO add back message fading script #}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            document.querySelectorAll('.auto-dismiss').forEach(function(el) {
+            el.style.transition = "opacity 0.5s";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 500);
+            });
+        }, 5000);
+        });
+    </script>
 {% endblock %}
 
 {% block modals %}
