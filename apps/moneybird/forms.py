@@ -1,15 +1,12 @@
 import json
 from datetime import datetime
 
-from django.core.cache import cache
-from django.forms import ModelForm, ChoiceField, HiddenInput, MultipleChoiceField, ModelMultipleChoiceField, \
-    Form, CharField
-from django.utils.functional import cached_property
+from django.forms import ModelForm, CharField
 from django import forms
 
-from apps.multivers import tools_multivers
-from apps.multivers.models import Product, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine, Location
-from apps.util.forms import CachingModelMultipleChoiceField, CachingModelChoiceField
+
+from apps.moneybird.models import Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
+from apps.util.forms import CachingModelChoiceField
 
 
 class FileForm(forms.Form):
@@ -107,14 +104,51 @@ class FileForm(forms.Form):
         model = ConceptOrder
 
 
+class OrderForm(ModelForm):
+    class Meta:
+        model = ConceptOrder
+        fields = ['customer']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['customer'].required = True
+        self.fields['customer'].empty_label = None
+
+
+class CustomerForm(ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['moneybird_id', 'vat_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['vat_type'].choices = Customer.VAT_TYPE
+
+
 class ProductForm(ModelForm):
     class Meta:
         model = Product
-        fields = ['alexia_id', 'alexia_name', 'multivers_id', 'multivers_name', 'margin']
+        fields = ['alexia_id', 'alexia_name', 'moneybird_id', 'product_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product_type'].required = True
+        self.fields['product_type'].empty_label = None
+
+
+class ProductTypeForm(ModelForm):
+    class Meta:
+        model = ProductType
+        fields = ['name', 'ledger_account_id', 'vat_rate']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['vat_rate'].required = True
+        self.fields['vat_rate'].empty_label = None
 
 
 class ConceptOrderDrinkForm(ModelForm):
-    locations = CachingModelMultipleChoiceField(queryset=Location.objects)
+    locations = CharField(max_length=255)
 
     class Meta:
         model = ConceptOrderDrink
@@ -127,7 +161,3 @@ class ConceptOrderDrinkLineForm(ModelForm):
     class Meta:
         model = ConceptOrderDrinkLine
         fields = ['product', 'amount']
-
-
-class SendOrdersForm(Form):
-    override_revenue_account = CharField(max_length=255, required=False)

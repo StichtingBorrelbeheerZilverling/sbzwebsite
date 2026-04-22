@@ -1,5 +1,8 @@
 from __future__ import unicode_literals
 
+import datetime
+
+from django.contrib.auth.models import User
 from django.db import models
 from django.urls import reverse
 
@@ -44,8 +47,8 @@ class Product(models.Model):
 
     alexia_id = models.IntegerField(unique=True)
     alexia_name = models.CharField(max_length=100, blank=False)
-    multivers_id = models.CharField(max_length=20, blank=False)
-    multivers_name = models.CharField(max_length=100, blank=False)
+    multivers_id = models.CharField(max_length=20, blank=True)
+    multivers_name = models.CharField(max_length=100, blank=True)
     margin = models.IntegerField(choices=MARGIN, default=HAS_MARGIN)
 
     def get_absolute_url(self):
@@ -65,7 +68,7 @@ class Customer(models.Model):
     )
 
     alexia_name = models.CharField(max_length=100, blank=False, unique=True)
-    multivers_id = models.CharField(max_length=50, null=True, blank=False)
+    multivers_id = models.CharField(max_length=50, null=True, blank=True)
     vat_type = models.CharField(max_length=1, null=True, blank=False, choices=VAT_TYPE)
 
     def get_absolute_url(self):
@@ -127,7 +130,7 @@ class ConceptOrder(models.Model):
             return "Borrels {} - {}".format(first_month, last_month)
 
     def as_multivers(self, revenue_account=None):
-        from apps.multivers.tools import MultiversOrder
+        from apps.multivers.tools_multivers import MultiversOrder
         result = MultiversOrder(date=self.date,
                                 reference=self.reference,
                                 payment_condition_id=Settings.get('payment_condition'),
@@ -158,7 +161,7 @@ class ConceptOrderDrink(models.Model):
         return self.name
 
     def as_multivers(self, revenue_account=None):
-        from apps.multivers.tools import MultiversOrderLine
+        from apps.multivers.tools_multivers import MultiversOrderLine
         order_lines = []
 
         discount_amount = float(Settings.get('discount')) / 100.0
