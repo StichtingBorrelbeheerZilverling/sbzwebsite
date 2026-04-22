@@ -10,7 +10,6 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
-from flask import request
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
@@ -28,23 +27,15 @@ class Index(LoginRequiredMixin, ListView):
         context['create_order_form'] = FileForm()
         context['create_order'] = OrderForm()
 
+        # Getting the new customers, products and product types that still need to be mapped.
         context['new_customers'] = Customer.objects.filter(Q(vat_type__isnull=True) | Q(vat_type__exact=""))
-        context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
         context['new_products'] = Product.objects.filter(Q(product_type__isnull=True))
         context['new_product_types'] = ProductType.objects.filter(Q(ledger_account_id__isnull=True) | Q(ledger_account_id__exact=""))
         
         # All customers are needed, because all customers are editable in the index page
-        context['customers'] = Customer.objects.all()
+        context['customer_list'] = Customer.objects.all()
 
-
-        for customer in context['customers']:
-            customer.edit_form = CustomerForm(instance=customer)
-        
-        # All customers are needed, because all customers are editable in the index page
-        context['customers'] = Customer.objects.all()
-
-
-        for customer in context['customers']:
+        for customer in context['customer_list']:
             customer.edit_form = CustomerForm(instance=customer)
         for product in context['new_products']:
             product.edit_form = ProductForm(instance=product)
@@ -55,6 +46,7 @@ class Index(LoginRequiredMixin, ListView):
 
 
 class SaveAuthCode(LoginRequiredMixin, RedirectView):
+    # Saving the OAuth Callback authorization code
     def dispatch(self, request, *args, **kwargs):
         if 'code' in request.GET and request.GET['code']:
             Settings.set('auth_code', request.GET['code'])
@@ -69,7 +61,6 @@ class ConceptOrderView(LoginRequiredMixin, DetailView):
                                                            'conceptorderdrink_set__conceptorderdrinkline_set',
                                                            'conceptorderdrink_set__conceptorderdrinkline_set__product')
 
-    @profile
     def dispatch(self, request, *args, **kwargs):
         return super(ConceptOrderView, self).dispatch(request, *args, **kwargs)
 
@@ -178,7 +169,6 @@ class ConceptOrderDrinkLineDeleteView(LoginRequiredMixin, DeleteView):
     model = ConceptOrderDrinkLine
     template_name = 'moneybird/forms/conceptorderdrinkline_confirm_delete.html'
 
-
     def get_success_url(self):
         return reverse('moneybird:order_view', kwargs={'pk': self.object.drink.order.pk})
 
@@ -188,6 +178,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
     template_name = 'moneybird/forms/file_upload.html'
     success_url = reverse_lazy('moneybird:index')
 
+    # Adding missing customers and products to the database from file
     def _create_missing_objects(self, data):
         for customer in data['drinks'].keys():
             if not Customer.objects.filter(alexia_name=customer).exists():
@@ -196,6 +187,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
                 customer_obj.save()
 
         for product_id, product_name in data['products'].items():
+            # If the product already exists, we only update the name
             product, _ = Product.objects.get_or_create(alexia_id=product_id)
             product.alexia_name = product_name
             product.save()
@@ -236,6 +228,7 @@ class OrdersCreateFromFile(LoginRequiredMixin, FormView):
 
 
 class OrdersCreate(LoginRequiredMixin, FormView):
+    # Option to create an order manually
     model = ConceptOrder
     form_class = OrderForm
     template_name = 'moneybird/forms/conceptorder_form.html'
@@ -272,6 +265,8 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
 
         try:
             orders = ConceptOrder.objects.filter(id__in=selected_orders)
+
+            # Creating missing customers and products in Moneybird
             moneybird.create_missing_customers(request, orders)
             moneybird.create_missing_products(request, orders)
 

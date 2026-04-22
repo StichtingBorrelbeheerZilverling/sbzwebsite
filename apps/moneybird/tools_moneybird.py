@@ -10,7 +10,7 @@ from apps.moneybird.exceptions import *
 
 
 class Moneybird:
-    BASE_URL = "https://moneybird.com/"
+    BASE_URL = "https://moneybird.com/api/v2/"
     EXPIRE_MARGIN = 5*60 # seconds
 
     def __init__(self, request, client_id=None, client_secret=None):
@@ -36,8 +36,10 @@ class Moneybird:
     @staticmethod
     def instantiate_or_redirect(request, *args, **kwargs):
         try:
+            # Try to make an instance and authenticate
             return Moneybird(request, *args, **kwargs), None
         except TokensNotPresentException:
+            # If all attempts at authenticating fail, redirect the user to request a new auth code
             return None, redirect(Moneybird.BASE_URL + "oauth/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}".format(
                 settings.mb_client_id, 
                 request.build_absolute_uri(reverse('moneybird:code')),
@@ -51,8 +53,7 @@ class Moneybird:
             return None, redirect('moneybird:index')
 
     def _auth(self):
-
-        # Moneybird Access Tokens currently do not expire, but they may add this in the future.
+        # Moneybird Access Tokens currently do not expire, but they may add this in the future
         now = datetime.now(tz=timezone.utc)
         if not self.access_token_expiry:
             self.access_token_expiry = now + timedelta(days=365)
@@ -94,21 +95,22 @@ class Moneybird:
         self._response_handling(response)
 
         data = response.json()
-
         self.refresh_token = data['refresh_token']
         self.access_token = data['access_token']
+        self.created_at = data['created_at']
         self.access_token_expiry = None
 
         if 'expires_in' in data:
+            self.expires_in = data['expires_in']
             self.access_token_expiry = datetime.now(tz=timezone.utc) + timedelta(seconds=int(data['expires_in'])-Moneybird.EXPIRE_MARGIN)
-            Settings.set('token_expires_in', data['expires_in'])
+            Settings.set('token_expires_in', self.expires_in)
 
         Settings.set('refresh_token', self.refresh_token)
         Settings.set('access_token', self.access_token)
-        Settings.set('token_created_at', data['created_at'])
+        Settings.set('token_created_at', self.created_at)
 
     def _get(self, method):
-        response = requests.get(Moneybird.BASE_URL + "api/v2/" + method, headers={
+        response = requests.get(Moneybird.BASE_URL + method, headers={
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         })
@@ -116,7 +118,7 @@ class Moneybird:
         return self._response_handling(response)
 
     def _post(self, method, data):
-        response = requests.post(Moneybird.BASE_URL + "api/v2/" + method, headers={
+        response = requests.post(Moneybird.BASE_URL + method, headers={
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         }, json=data)
@@ -124,7 +126,7 @@ class Moneybird:
         return self._response_handling(response)
     
     def _patch(self, method, data):
-        response = requests.patch(Moneybird.BASE_URL + "api/v2/" + method, headers={
+        response = requests.patch(Moneybird.BASE_URL + method, headers={
             'Authorization': 'Bearer {}'.format(self.access_token),
             'Accept': 'application/json',
         }, json=data)
@@ -145,6 +147,7 @@ class Moneybird:
             raise MoneybirdNotAuthenticatedException("Not authenticated to Moneybird API", response=response)
 
         elif response.status_code in [400, 403, 405, 406, 422]:
+            # Bundling BadRequest, Forbidden, MethodNotAllowed, NotAcceptable and UnprocessableEntity together
             raise MoneybirdBadRequestException("Bad request to Moneybird API", response=response)
         
         elif response.status_code == 500:
@@ -197,6 +200,7 @@ class Moneybird:
                 messages.success(request, "Product {} created successfully in Moneybird.".format(product.alexia_name))
 
     def get_administration(self):
+        # We expect the OAuth application to only have one active connection
         return self._get("administrations").json()[0]['id']
 
     def create_invoice(self, administration, order):
@@ -205,11 +209,11 @@ class Moneybird:
     def get_product(self, administration, product_id):
         return self._get("{}/products/{}".format(administration, product_id))
     
-    def update_product(self, administration, product_id, product):
-        return self._patch("{}/products/{}".format(administration, product_id), {'product': product})
-
     def create_product(self, administration, product):
         return self._post("{}/products".format(administration), {'product': product})
+
+    def update_product(self, administration, product_id, product):
+        return self._patch("{}/products/{}".format(administration, product_id), {'product': product})
     
     def get_customer(self, administration, customer_id):
         return self._get("{}/contacts/{}".format(administration, customer_id))
@@ -219,10 +223,7 @@ class Moneybird:
 
 
 class MoneybirdOrderLine:
-    def __init__(self,
-                 product_id,
-                 quantity,
-                 description, period):
+    def __init__(self, product_id, quantity, description, period):
         self.description = description
         self.product_id = product_id
         self.quantity = quantity
@@ -230,18 +231,15 @@ class MoneybirdOrderLine:
 
     def as_dict(self):
         return {
-            "amount": self.quantity,
-            "product_id": self.product_id,
             "description": self.description,
+            "product_id": self.product_id,
+            "amount": self.quantity,
             "period": self.period,
         }
 
 
 class MoneybirdOrder:
-    def __init__(self,
-                 contact_id,
-                 reference,
-                 customer_vat_type):
+    def __init__(self, contact_id, reference, customer_vat_type):
         self.reference = reference
         self.contact_id = contact_id
         if customer_vat_type == '0' or customer_vat_type == 0:
@@ -263,4 +261,3 @@ class MoneybirdOrder:
             "prices_are_incl_tax": self.prices_incl_vat,
             "details_attributes": lines,
         }
-    

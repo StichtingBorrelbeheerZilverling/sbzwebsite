@@ -111,7 +111,7 @@
         {% bootstrap_delete_modal order 'moneybird:order_delete' order.pk %}
     {% endfor %}
 
-    {% for customer in customers %}
+    {% for customer in customer_list %}
         {% bootstrap_edit_modal customer customer.edit_form 'moneybird:customer_edit' customer.pk %}
     {% endfor %}
     

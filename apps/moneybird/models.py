@@ -49,7 +49,6 @@ class Customer(models.Model):
     def as_moneybird_dict(self):
         return {
             "company_name": self.alexia_name,
-            # "invoice_workflow_id": self.invoice_workflow_id
         }
 
     class Meta:
