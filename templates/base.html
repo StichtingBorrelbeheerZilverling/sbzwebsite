@@ -54,6 +54,19 @@
                             </li>
                         </ul>
                     </li>
+                    <li class="dropdown {% if active_id == "moneybird" %}active{% endif %}">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
+                            Moneybird
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url 'moneybird:index' %}" class="dropdown-item">Concept Orders</a>
+                                <a href="{% url 'moneybird:products' %}" class="dropdown-item">Products</a>
+                                <a href="{% url 'moneybird:product_types' %}" class="dropdown-item">Product Types</a>
+                            </li>
+                        </ul>
+                    </li>
                     <li class="dropdown {% if active_id == "grolsch" %}active{% endif %}">
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-toggle="dropdown">
                             Grolsch
@@ -139,6 +152,7 @@
 </nav>
 
 <div class="container">
+    
     {% block content %}{% endblock %}
 </div>
 

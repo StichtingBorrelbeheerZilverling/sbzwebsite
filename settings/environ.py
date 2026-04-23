@@ -160,6 +160,8 @@ SERVER_EMAIL = env('SERVER_EMAIL', default=EMAIL_FROM)
 
 mv_client_id = env('mv_client_id', default='')
 mv_client_secret = env('mv_client_secret', default='')
+mb_client_id = env('mb_client_id', default='')
+mb_client_secret = env('mb_client_secret', default='')
 
 DE_KLOK_EMAIL = env('DE_KLOK_EMAIL', default='')
 DE_KLOK_PASSWORD = env('DE_KLOK_PASSWORD', default='')
