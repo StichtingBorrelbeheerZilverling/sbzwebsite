@@ -13,7 +13,7 @@ from django.db.models.deletion import ProtectedError
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
-from apps.moneybird.exceptions import MoneybirdAPIException, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
+from apps.moneybird.exceptions import MoneybirdAPIException, MoneybirdMethodNotAllowedException, MoneybirdNotFoundException, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -345,31 +345,42 @@ class ProductUpdate(LoginRequiredMixin, View):
         form = self.form_class(request.POST, instance=self.model.objects.get(pk=self.kwargs['pk']))
 
         if form.is_valid():
-            # Only updates Moneybird if product name or type has changed
             old_name  = Product.objects.get(pk=self.kwargs['pk']).alexia_name
             old_type = Product.objects.get(pk=self.kwargs['pk']).product_type
+            old_mb_id = Product.objects.get(pk=self.kwargs['pk']).moneybird_id
             form.save()
             new_name = form.instance.alexia_name
             new_type = form.instance.product_type
+            new_mb_id = form.instance.moneybird_id
 
-            if (old_name == new_name) and (old_type == new_type):
+            # Only update Moneybird if product name, type, or moneybird_id has changed
+            if (old_name == new_name) and (old_type == new_type) and (old_mb_id == new_mb_id):
+                return redirect(self.success_url)
+            
+            # Don't update Moneybird product if it doens't exist
+            if not form.instance.moneybird_id:
                 return redirect(self.success_url)
 
             moneybird, do_redirect = Moneybird.instantiate_or_redirect(request)
             if do_redirect: return do_redirect
             
             try:
-                moneybird.update_product(moneybird.get_administration(), form.instance.moneybird_id, form.instance.as_moneybird_dict())
+                # Try to update the product in Moneybird, if it doesn't exist the moneybird_id is removed
+                administration = moneybird.get_administration()
+                moneybird.update_product(administration, form.instance.moneybird_id, form.instance.as_moneybird_dict())
+                messages.success(request, "Product updated successfully in Moneybird.")
 
+            except MoneybirdNotFoundException:
+                messages.error(request, "Moneybird Product does not exist. Removing Moneybird ID for product {}.".format(form.instance.alexia_name))
+                form.instance.moneybird_id = ""
+                form.instance.save()
+ 
             except MoneybirdRateLimitExceededException as e:
                 messages.error(request, "Rate limit exceeded, try again after {} seconds.".format(e.response.headers['RateLimit-Remaining']))
 
             except MoneybirdAPIException as e:
                 messages.error(request, "Failed to update product in Moneybird: {}: {}".format(e, e.response.text))
 
-            else:
-                messages.success(request, "Product updated successfully in Moneybird.")
-            
             return redirect(self.success_url)
         else:
             return render(request, self.template_name, {'form': form})

@@ -163,8 +163,7 @@ class Moneybird:
         for customer in Customer.objects.filter(pk__in=orders.values_list('customer_id', flat=True).distinct()):
             if customer.moneybird_id:
                 try:
-                    response = self.get_customer(administration, customer.moneybird_id)
-                    moneybird_customer = response.json()
+                    self.get_customer(administration, customer.moneybird_id)
 
                 except MoneybirdNotFoundException:
                     messages.error(request, "Moneybird customer does not exist. Removing Moneybird ID for customer {}.".format(customer.alexia_name))
