@@ -13,7 +13,7 @@ from django.db.models.deletion import ProtectedError
 
 from apps.moneybird.forms import CustomerForm, FileForm, OrderForm, ProductForm, ProductTypeForm, ConceptOrderDrinkForm, ConceptOrderDrinkLineForm
 from apps.moneybird.tools_moneybird import Moneybird
-from apps.moneybird.exceptions import MoneybirdAPIException, MoneybirdMethodNotAllowedException, MoneybirdNotFoundException, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
+from apps.moneybird.exceptions import MoneybirdAPIException, MoneybirdNotFoundException, MoneybirdRateLimitExceededException, MoneybirdAccountLimitReachedException
 from apps.util.profiling import profile
 from .models import Settings, Customer, Product, ProductType, ConceptOrder, ConceptOrderDrink, ConceptOrderDrinkLine
 
@@ -278,6 +278,10 @@ class OrdersSendSelectedView(LoginRequiredMixin, View):
 
         else:
             for order in orders:
+                if order.conceptorderdrink_set.count() == 0:
+                    messages.warning(request, "Order for {} has no drinks and will be skipped.".format(order.customer.alexia_name))
+                    continue
+
                 try:
                     moneybird_order = order.as_moneybird()
                     moneybird.create_invoice(moneybird.get_administration(), moneybird_order)
