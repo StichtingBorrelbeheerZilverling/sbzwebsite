@@ -3,7 +3,6 @@ import base64
 from urllib.parse import urlparse
 
 import requests
-
 from settings import DE_KLOK_EMAIL, DE_KLOK_PASSWORD
 
 
@@ -132,12 +131,6 @@ class DeKlok:
               actual {
                 amount
               }
-              discountAmount {
-                amount
-              }
-              list {
-                amount
-              }
             }
           }
         }
@@ -186,12 +179,6 @@ class DeKlok:
                 code
                 price {
                   actual {
-                    amount
-                  }
-                  discountAmount {
-                    amount
-                  }
-                  list {
                     amount
                   }
                 }
