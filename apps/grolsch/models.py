@@ -2,6 +2,7 @@ from django.core.mail import send_mail
 from django.db import models
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.contrib import messages
 
 from apps.grolsch.tools import DeKlok
 from settings import FULL_URL_PREFIX
@@ -31,7 +32,7 @@ class Product(models.Model):
         return int(euros) * 100 + int(cents)
 
     @staticmethod
-    def create_from_url(url):
+    def create_from_url(request, url):
         klok = DeKlok()
         product = Product()
 
