@@ -6,6 +6,7 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^multivers/', include('apps.multivers.urls')),
+    url(r'^moneybird/', include('apps.moneybird.urls')),
     url(r'^grolsch/', include('apps.grolsch.urls')),
     url(r'^mail/', include('apps.mail.urls')),
     url(r'^flow/', include('apps.flowguard.urls')),

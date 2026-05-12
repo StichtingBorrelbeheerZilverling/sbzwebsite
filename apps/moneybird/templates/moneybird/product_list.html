@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    {% if messages %}
+    {% for message in messages %}
+        {% if message.tags == "error" %}
+        <div class="alert alert-danger auto-dismiss fade show">
+        {% else %}
+        <div class="alert alert-{{ message.tags }} auto-dismiss fade show">
+        {% endif %}
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% endif %}
+    <h1>
+        Alexia Products
+        <button class="btn btn-secondary" data-toggle="modal" data-target="#create-Product">
+            + Create
+        </button>
+    </h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th colspan="1">ID</th>
+            <th colspan="1">Alexia Name</th>
+            <th colspan="1">Product Type</th>
+            <th colspan="1">Moneybird ID</th>
+            <th><!-- Buttons --></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for product in product_list %}
+            <tr>
+                <td>{{ product.alexia_id }}</td>
+                <td>{{ product.alexia_name }}</td>
+                <td>{{ product.product_type }}</td>
+                <td>{{ product.moneybird_id }}</td>
+                <td>
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
+                            data-target="#edit-Product-{{ product.pk }}">
+                        <span class="oi oi-pencil"></span>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#delete-Product-{{ product.pk }}">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            document.querySelectorAll('.auto-dismiss').forEach(function(el) {
+            el.style.transition = "opacity 0.5s";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 500);
+            });
+        }, 5000);
+        });
+    </script>
+{% endblock %}
+
+{% block modals %}
+    {% bootstrap_create_modal create_form 'moneybird:product_add' %}
+
+    {% for product in product_list %}
+        {% bootstrap_edit_modal product product.edit_form 'moneybird:product_edit' product.pk %}
+        {% bootstrap_delete_modal product 'moneybird:product_delete' product.pk %}
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load i18n bootstrap_form %}
+
+{% block content %}
+    {% if messages %}
+    {% for message in messages %}
+        {% if message.tags == "error" %}
+        <div class="alert alert-danger auto-dismiss fade show">
+        {% else %}
+        <div class="alert alert-{{ message.tags }} auto-dismiss fade show">
+        {% endif %}
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% endif %}
+    
+    {% if new_products or new_customers or new_product_types %}
+        <h1>Unresolved Issues</h1>
+        <p>
+            Please resolve the following issues before sending any pending concept orders:
+        </p>
+        <ul>
+        {% for product in new_products %}
+            <li>
+                Please map the new product "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Product-{{ product.pk }}">{{ product }}</a>" to a Product Type.
+            </li>
+        {% endfor %}
+        {% for customer in new_customers %}
+            <li>
+                Please map the new customer "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Customer-{{ customer.pk }}">{{ customer }}</a>" to a VAT Type.
+            </li>
+        {% endfor %}
+        {% for product_type in new_product_types %}
+            <li>
+                Please map the new product type "<a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-ProductType-{{ product_type.pk }}">{{ product_type }}</a>" to a Ledger Account ID.
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h1>
+        Pending Concept Orders
+    </h1>
+    <p>
+        {% if conceptorder_list and not new_products and not new_customers and not new_product_types %}
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send-all">
+                Send All
+            </button>
+            <button type="button" data-toggle="modal" class="btn btn-primary" data-target="#confirm-send-selected">
+                Send Selected
+            </button>
+        {% endif %}
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#form-file-order">
+            + From File
+        </button>
+        <button type="button" data-toggle="modal" class="btn btn-secondary" data-target="#form-manual-order">
+            + Create Manually
+        </button>
+    </p>
+
+    <form id="send-selected-form" method="POST" action="{% url 'moneybird:orders_send_selected' %}">
+    {% csrf_token %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th><!-- Checkbox --></th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Drink count</th>
+            <th><!-- Buttons --></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for order in conceptorder_list %}
+            <tr>
+                <td><input type="checkbox" name="selected_orders" value="{{ order.pk }}"></td>
+                <td>{{ order.date|date:"d-m-Y" }}</td>
+                <td><a href="#" class="btn btn-link p-0" data-toggle="modal" data-target="#edit-Customer-{{ order.customer.pk }}">{{ order.customer }}</a></td>
+                <td>{{ order.conceptorderdrink_set.all|length }}</td>
+                <td>
+                    <a href="{% url 'moneybird:order_view' order.pk %}" class="btn btn-secondary btn-sm">View</a>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#delete-ConceptOrder-{{ order.pk }}">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td><emph>There are no pending concept orders right now.</emph></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </form>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            document.querySelectorAll('.auto-dismiss').forEach(function(el) {
+            el.style.transition = "opacity 0.5s";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 500);
+            });
+        }, 5000);
+        });
+    </script>
+{% endblock %}
+
+{% block modals %}
+    {% for order in conceptorder_list %}
+        {% bootstrap_delete_modal order 'moneybird:order_delete' order.pk %}
+    {% endfor %}
+
+    {% for customer in customer_list %}
+        {% bootstrap_edit_modal customer customer.edit_form 'moneybird:customer_edit' customer.pk %}
+    {% endfor %}
+    
+    {% for product in new_products %}
+        {% bootstrap_edit_modal product product.edit_form 'moneybird:product_edit' product.pk %}
+    {% endfor %}
+    {% for product_type in new_product_types %}
+        {% bootstrap_edit_modal product_type product_type.edit_form 'moneybird:product_type_edit' product_type.pk %}
+    {% endfor %}
+
+    {% bootstrap_form_modal 'file-order' "Create concept orders from File" create_order_form 'moneybird:orders_create_from_file'%}
+    {% bootstrap_form_modal 'manual-order' "Create concept order manually" create_order 'moneybird:orders_create'%}
+
+    {% bootstrap_confirm_modal "send-all" "Are you sure you want to send all pending concept orders?" "moneybird:orders_send_all" %}
+    {% bootstrap_confirm_submit_form "send-selected" "Are you sure you want to send the selected pending concept orders?" "moneybird:orders_send_selected" form_id="send-selected-form" %}
+{% endblock %}
