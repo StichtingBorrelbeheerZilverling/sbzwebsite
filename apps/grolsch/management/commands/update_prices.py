@@ -1,5 +1,3 @@
-import math
-from django.core import mail
 from django.core.management import BaseCommand
 
 from apps.grolsch.models import Product, UnresolvedPriceChange
@@ -13,14 +11,14 @@ class Command(BaseCommand):
         UnresolvedPriceChange.objects.all().delete()
 
         products = Product.objects.all()
-        ids = list(products.values_list('grolsch_article_no', flat=True))
+        ids = list(products.values_list('grolsch_id', flat=True))
 
         klok = DeKlok()
         klok_products = klok.get_product_prices(ids)
 
         for klok_product in klok_products:
             id = klok_product["id"]
-            product = products.filter(grolsch_article_no=id).first()
+            product = products.filter(grolsch_id=id).first()
             price = int(round(100*klok_product["price"]["actual"]["amount"]))
 
             if product.last_price != price and product.last_discount_price != price:

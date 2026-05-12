@@ -1,16 +1,14 @@
-import django
-import os
 from django.core.mail import send_mail
 from django.db import models
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse
 
 from apps.grolsch.tools import DeKlok
 from settings import FULL_URL_PREFIX
 
 
 class Product(models.Model):
-    grolsch_article_no = models.CharField(max_length=255, blank=False, null=False)
+    grolsch_id = models.CharField(max_length=255, blank=False, null=False)
     grolsch_name = models.CharField(max_length=255, blank=False, null=False)
 
     last_price = models.PositiveIntegerField(null=True, blank=True)
@@ -39,7 +37,7 @@ class Product(models.Model):
 
         response = klok.get_product_by_url(url)
 
-        product.grolsch_article_no = response["id"]
+        product.grolsch_id = response["id"]
         product.grolsch_name = response["name"]
         product.last_price = Product.str_to_cents(str(response["price"]["actual"]["amount"]))
         product.last_discount_price = None
@@ -77,4 +75,5 @@ class UnresolvedPriceChange(models.Model):
                   message=plain,
                   html_message=html,
                   from_email='www@sbz.utwente.nl',
-                  recipient_list=['bestellingen@sbz.utwente.nl', 'penningmeester@sbz.utwente.nl'])
+                  recipient_list=['www@sbz.utwente.nl'])
+                #   recipient_list=['bestellingen@sbz.utwente.nl', 'penningmeester@sbz.utwente.nl'])
