@@ -12,7 +12,8 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Grolsch name</th>
+                <th colspan="2">Grolsch name</th>
+                <th>Price tracked?</th>
                 <th>Last price</th>
                 <th>Current discount price</th>
                 <th><!-- Delete button --></th>
@@ -21,9 +22,11 @@
         <tbody>
             {% for product in product_list %}
                 <tr>
+                    <td>{{ product.grolsch_article_no }}</td>
                     <td>{{ product.grolsch_name }}</td>
-                    <td>€ {{ product.last_price_str|default:"–" }}</td>
-                    <td>€ {{ product.last_discount_price_str|default:"–" }}</td>
+                    <td>{{ product.price_track_id|yesno:"Yes,No"  }}</td>
+                    <td>{{ product.last_price_str|default:"–" }}</td>
+                    <td>{{ product.last_discount_price_str|default:"–" }}</td>
                     <td>
                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                                 data-target="#delete-Product-{{ product.pk }}">

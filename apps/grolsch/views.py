@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, FormView, DetailView, DeleteView
+from django.views.generic import ListView, CreateView, FormView, DetailView, UpdateView, DeleteView
 
 from apps.grolsch.forms import CreateProductFromUrlForm, PriceChangeResolveForm
 from apps.grolsch.models import Product, UnresolvedPriceChange
@@ -23,8 +23,9 @@ class ProductCreate(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         url = form.cleaned_data['url']
+        track_price = form.cleaned_data['track_price']
 
-        product = Product.create_from_url(url)
+        product = Product.create_from_url(url, track_price=track_price)
         product.save()
         return super(ProductCreate, self).form_valid(form)
 
