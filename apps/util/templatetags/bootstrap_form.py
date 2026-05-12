@@ -19,6 +19,8 @@ def _bootstrap_form_field_template(field):
         # Cast floats to string with dot decimal point
         field.initial_string = str(field.initial or "")
         return "bootstrap_form/field_number.html"
+    elif isinstance(widget, widgets.URLInput):
+        return "bootstrap_form/field_text.html"
     elif isinstance(widget, widgets.TextInput):
         return "bootstrap_form/field_text.html"
     elif isinstance(widget, widgets.Textarea):
