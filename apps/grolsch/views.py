@@ -23,9 +23,8 @@ class ProductCreate(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         url = form.cleaned_data['url']
-        track_price = form.cleaned_data['track_price']
 
-        product = Product.create_from_url(url, track_price=track_price)
+        product = Product.create_from_url(url)
         product.save()
         return super(ProductCreate, self).form_valid(form)
 
