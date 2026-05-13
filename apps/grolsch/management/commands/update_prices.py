@@ -14,7 +14,12 @@ class Command(BaseCommand):
         ids = list(products.values_list('grolsch_id', flat=True))
 
         klok = DeKlok()
-        klok_products = klok.get_product_prices(ids)
+
+        try:
+            klok_products = klok.get_product_prices(ids)
+        except ValueError:
+            raise ValueError(f"Could not get product prices for ID: {ids}")
+
 
         for klok_product in klok_products:
             id = klok_product["id"]
